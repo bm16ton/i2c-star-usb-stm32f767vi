@@ -10,7 +10,6 @@ should be built for multiple devices.
  * [pyusb](https://walac.github.io/pyusb/) for running the tests. 
  * [OpenOCD](http://openocd.org/) >= 0.9 for automated flashing of specific boards
  * python3 for running the tests at the command line.
- * unittest-xml-reporting, only if running in CI mode. XX
 
 ### Building the device firmware
 There are Makefile.xxxxx files for all the currently tested targets.
@@ -62,7 +61,7 @@ OK (skipped=2)
 
 To be even more brutal, run this in a shell loop.
 ```
-$ while true; do python test_gadget0.py -d stm32f072disco; done
+$ while true; do python test_gadget0.py stm32f072disco; done
 ```
 
 You can also run individual tests, or individual sets of tests, see the [unittest documentation](https://docs.python.org/3/library/unittest.html) for more information.

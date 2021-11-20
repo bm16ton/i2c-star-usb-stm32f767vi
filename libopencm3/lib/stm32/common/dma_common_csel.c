@@ -1,4 +1,7 @@
-/** @addtogroup dma_file
+/** @addtogroup dma_file DMA peripheral API
+@ingroup peripheral_apis
+
+LGPL License Terms @ref lgpl_license
  */
 /*
  * This file is part of the libopencm3 project.

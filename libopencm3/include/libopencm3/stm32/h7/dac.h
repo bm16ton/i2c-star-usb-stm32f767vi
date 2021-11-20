@@ -31,15 +31,6 @@ LGPL License Terms @ref lgpl_license
 #ifndef LIBOPENCM3_DAC_H
 #define LIBOPENCM3_DAC_H
 
-#include <libopencm3/stm32/common/dac_common_v2.h>
-
-/**@{*/
-
-/** @defgroup dac_reg_base DAC register base addresses
-@{*/
-#define DAC1				DAC_BASE
-/**@}*/
-
-/**@}*/
+#include <libopencm3/stm32/common/dac_common_all.h>
 
 #endif

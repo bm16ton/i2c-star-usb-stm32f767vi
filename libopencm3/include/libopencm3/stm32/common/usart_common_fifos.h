@@ -92,10 +92,8 @@ typedef enum {
 
 BEGIN_DECLS
 
-/** @defgroup usart_file USART peripheral API
- * @ingroup peripheral_apis
- * @{
- */
+/** @addtogroup usart_file
+@{*/
 /**
  * Enable FIFOs on the specified USART.
  * @param[in] usart  Base address of USART to configure FIFOs.

@@ -29,22 +29,24 @@
 #include <librfn/time.h>
 #include <librfn/util.h>
 
+#define I2C_WRITE			0
+
 #define D(x) { #x, x }
-static const regdump_desc_t i2c_sr1_desc[] = { { "I2C_SR1", 0 },
-					       D(I2C_SR1_SMBALERT),
-					       D(I2C_SR1_TIMEOUT),
-					       D(I2C_SR1_PECERR),
-					       D(I2C_SR1_OVR),
-					       D(I2C_SR1_AF),
-					       D(I2C_SR1_ARLO),
-					       D(I2C_SR1_BERR),
-					       D(I2C_SR1_TxE),
-					       D(I2C_SR1_RxNE),
-					       D(I2C_SR1_STOPF),
-					       D(I2C_SR1_ADD10),
-					       D(I2C_SR1_BTF),
-					       D(I2C_SR1_ADDR),
-					       D(I2C_SR1_SB),
+static const regdump_desc_t i2c_cr1_desc[] = { { "I2C_CR1", 0 },
+					       D(I2C_ISR_ALERT),
+					       D(I2C_ISR_TIMEOUT),
+					       D(I2C_ISR_PECERR),
+					       D(I2C_ISR_OVR),
+					       D(I2C_ISR_NACKF),
+					       D(I2C_ISR_ARLO),
+					       D(I2C_ISR_BERR),
+					       D(I2C_CR1_TXIE),
+					       D(I2C_CR1_RXIE),
+					       D(I2C_ISR_STOPF),
+					       D(I2C_CR2_ADD10),
+					       D(I2C_ISR_TC),
+					       D(I2C_ISR_ADDR),
+					       D(I2C_CR1_SBC),
 					       { NULL, 0 } };
 #undef D
 
@@ -53,7 +55,7 @@ static bool i2c_ctx_is_timed_out(i2c_ctx_t *c)
 	if (cyclecmp32(time_now(), c->timeout) > 0) {
 		if (c->verbose) {
 			printf("I2C TRANSACTION TIMED OUT\n");
-			regdump(I2C_SR1(c->i2c), i2c_sr1_desc);
+			regdump(I2C_CR1(c->i2c), i2c_cr1_desc);
 		}
 
 		return true;
@@ -91,11 +93,11 @@ void i2c_ctx_reset(i2c_ctx_t *c)
 	}
 
 	/* freq's numeric value ends up in MHz (i.e. in this case, 30) */
-#ifdef STM32F4
-	uint16_t freq = I2C_CR2_FREQ_30MHZ;
-#else
-	uint16_t freq = 36;
-#endif
+//#ifdef STM32F4
+//	uint16_t freq = I2C_CR2_FREQ_30MHZ;
+//#else
+//	uint16_t freq = 36;
+//#endif
 
 	/* CCR is the number of APB bus cycles in *half* an I2C bus
 	 * cycle. For Sm (100Khz) this ends up as:
@@ -110,13 +112,22 @@ void i2c_ctx_reset(i2c_ctx_t *c)
 	 *   freq + 1
 	 */
 
-	/* peripheral configuration */
+	/* peripheral configuration
 	i2c_peripheral_disable(c->i2c);
 	i2c_set_clock_frequency(c->i2c, freq);
 	i2c_set_ccr(c->i2c, freq * 5);
 	i2c_set_trise(c->i2c, freq + 1);
 	i2c_set_own_7bit_slave_address(c->i2c, 0x32);
 	i2c_peripheral_enable(c->i2c);
+	*/
+
+	i2c_reset(I2C1);
+	i2c_peripheral_disable(I2C1);
+	i2c_enable_analog_filter(I2C1);
+	i2c_set_digital_filter(I2C1, 0);
+	i2c_set_speed(I2C1, i2c_speed_sm_100k, 8);
+	i2c_set_7bit_addr_mode(I2C1);
+	i2c_peripheral_enable(I2C1);
 }
 
 pt_state_t i2c_ctx_start(i2c_ctx_t *c)
@@ -126,11 +137,11 @@ pt_state_t i2c_ctx_start(i2c_ctx_t *c)
 	i2c_send_start(c->i2c);
 
 	while (!i2c_ctx_is_timed_out(c) &&
-	       !((I2C_SR1(c->i2c) & I2C_SR1_SB) &
-		 (I2C_SR2(c->i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))))
+	       !((I2C_CR1(c->i2c) & I2C_CR1_SBC) &
+		 (I2C_CR2(c->i2c) & (I2C_ISR_BUSY))))
 		PT_YIELD();
 
-	if (!I2C_SR1(c->i2c) & I2C_SR1_SB) {
+	if (!I2C_CR1(c->i2c) & (I2C_CR1_SBC)) {
 		i2c_ctx_reset(c);
 		c->err = EIO;
 	}
@@ -145,14 +156,14 @@ pt_state_t i2c_ctx_sendaddr(i2c_ctx_t *c, uint16_t addr,
 
 	c->bytes_remaining = bytes_to_read;
 
-	i2c_send_7bit_address(c->i2c, addr, !!bytes_to_read);
+	i2c_set_7bit_address(c->i2c, addr);
 
 	while (!i2c_ctx_is_timed_out(c) &&		// bad
-	       !(I2C_SR1(c->i2c) & I2C_SR1_AF) &&	// bad
-	       !(I2C_SR1(c->i2c) & I2C_SR1_ADDR))	// good
+	       !(I2C_CR1(c->i2c) & I2C_CR1_PE) &&	// bad
+	       !(I2C_CR1(c->i2c) & I2C_ISR_ADDR))	// good
 		PT_YIELD();
 
-	if (!(I2C_SR1(c->i2c) & I2C_SR1_ADDR)) {
+	if (!(I2C_CR1(c->i2c) & I2C_ISR_ADDR)) {
 		i2c_ctx_reset(c);
 		c->err = EIO;
 	}
@@ -161,13 +172,13 @@ pt_state_t i2c_ctx_sendaddr(i2c_ctx_t *c, uint16_t addr,
 	 * final byte.
 	 */
 	if (c->bytes_remaining == 1)
-		I2C_CR1(c->i2c) &= ~I2C_CR1_ACK;
+		I2C_CR1(c->i2c) &= ~I2C_CR2_NACK;
 	else if (c->bytes_remaining >= 2)
-		I2C_CR1(c->i2c) |= I2C_CR1_ACK;
+		I2C_CR1(c->i2c) |= I2C_CR2_NACK;
 
-	/* Read sequence has side effect or clearing I2C_SR1_ADDR */
+	/* Read sequence has side effect or clearing I2C_CR1_ADDR */
 	uint32_t reg32 __attribute__((unused));
-	reg32 = I2C_SR2(c->i2c);
+	reg32 = I2C_CR2(c->i2c);
 
 	if (c->bytes_remaining == 1)
 		i2c_send_stop(c->i2c);
@@ -181,10 +192,10 @@ pt_state_t i2c_ctx_senddata(i2c_ctx_t *c, uint8_t data)
 
 	i2c_send_data(c->i2c, data);
 
-	while (!i2c_ctx_is_timed_out(c) && !(I2C_SR1(c->i2c) & I2C_SR1_BTF))
+	while (!i2c_ctx_is_timed_out(c) && !(I2C_CR1(c->i2c) & I2C_ISR_TC))
 		PT_YIELD();
 
-	if (!(I2C_SR1(c->i2c) & I2C_SR1_BTF)) {
+	if (!(I2C_CR1(c->i2c) & I2C_ISR_TC)) {
 		i2c_ctx_reset(c);
 		c->err = EIO;
 	}
@@ -196,10 +207,10 @@ pt_state_t i2c_ctx_getdata(i2c_ctx_t *c, uint8_t *data)
 {
 	PT_BEGIN(&c->leaf);
 
-	while (!i2c_ctx_is_timed_out(c) && !(I2C_SR1(c->i2c) & I2C_SR1_RxNE))
+	while (!i2c_ctx_is_timed_out(c) && !(I2C_CR1(c->i2c) & I2C_CR1_RXIE))
 		PT_YIELD();
 
-	if (!(I2C_SR1(c->i2c) & I2C_SR1_RxNE)) {
+	if (!(I2C_CR1(c->i2c) & I2C_CR1_RXIE)) {
 		i2c_ctx_reset(c);
 		c->err = EIO;
 		PT_EXIT();
@@ -207,7 +218,7 @@ pt_state_t i2c_ctx_getdata(i2c_ctx_t *c, uint8_t *data)
 
 	/* Need to NACK the final byte and STOP the transaction */
 	if (--c->bytes_remaining == 1) {
-		I2C_CR1(c->i2c) &= ~I2C_CR1_ACK;
+		I2C_CR1(c->i2c) &= ~I2C_CR2_NACK;
 		i2c_send_stop(c->i2c);
 	}
 
@@ -221,10 +232,10 @@ pt_state_t i2c_ctx_stop(i2c_ctx_t *c)
 	PT_BEGIN(&c->leaf);
 
 	while (!i2c_ctx_is_timed_out(c) &&
-	       !(I2C_SR1(c->i2c) & (I2C_SR1_BTF | I2C_SR1_TxE)))
+	       !(I2C_CR1(c->i2c) & (I2C_ISR_TC | I2C_CR1_TXIE)))
 		PT_YIELD();
 
-	if (!(I2C_SR1(c->i2c) & (I2C_SR1_BTF | I2C_SR1_TxE))) {
+	if (!(I2C_CR1(c->i2c) & (I2C_ISR_TC | I2C_CR1_TXIE))) {
 		i2c_ctx_reset(c);
 		c->err = EIO;
 		PT_EXIT();
@@ -295,7 +306,7 @@ pt_state_t i2c_ctx_getreg(i2c_ctx_t *c, uint16_t addr, uint16_t reg,
 	PT_SPAWN(&c->leaf, i2c_ctx_start(c));
 	PT_EXIT_ON(c->err);
 
-	PT_SPAWN(&c->leaf, i2c_ctx_sendaddr(c, addr, I2C_WRITE));
+	PT_SPAWN(&c->leaf, i2c_ctx_sendaddr(c, addr, 0));
 	PT_EXIT_ON(c->err);
 
 	PT_SPAWN(&c->leaf, i2c_ctx_senddata(c, reg));
@@ -304,7 +315,7 @@ pt_state_t i2c_ctx_getreg(i2c_ctx_t *c, uint16_t addr, uint16_t reg,
 	PT_SPAWN(&c->leaf, i2c_ctx_start(c));
 	PT_EXIT_ON(c->err);
 
-	PT_SPAWN(&c->leaf, i2c_ctx_sendaddr(c, addr, I2C_READ));
+	PT_SPAWN(&c->leaf, i2c_ctx_sendaddr(c, addr, 1));
 	PT_EXIT_ON(c->err);
 
 	PT_SPAWN(&c->leaf, i2c_ctx_getdata(c, val));

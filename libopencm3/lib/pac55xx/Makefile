@@ -35,11 +35,7 @@ TGT_CFLAGS  += $(DEBUG_FLAGS)
 TGT_CFLAGS  += $(STANDARD_FLAGS)
 ARFLAGS		= rcs
 
-OBJS += can.o
-OBJS += ccs.o
 OBJS += gpio.o
-OBJS += memctl.o
-OBJS += usart.o
 
 VPATH += ../cm3
 

@@ -25,6 +25,9 @@
 
 /* --- Device Electronic Signature -------------------------------- */
 
+/* Flash size register */
+#define DESIG_FLASH_SIZE		MMIO16(DESIG_FLASH_SIZE_BASE + 0x00)
+
 BEGIN_DECLS
 
 /**

@@ -22,15 +22,10 @@
 #include <libopencm3/stm32/flash.h>
 
 /**@{*/
-
-/** @addtogroup flash_acr_values
- * @{
- */
 #define FLASH_ACR_DCRST			(1 << 12)
 #define FLASH_ACR_ICRST			(1 << 11)
 #define FLASH_ACR_DCEN			(1 << 10)
 #define FLASH_ACR_ICEN			(1 << 9)
-/**@}*/
 
 
 BEGIN_DECLS

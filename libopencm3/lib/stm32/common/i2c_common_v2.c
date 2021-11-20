@@ -33,7 +33,7 @@
  *
  * @param[in] i2c Unsigned int32. I2C peripheral identifier @ref i2c_reg_base.
  */
-#define I2C3				I2C3_BASE
+
 void i2c_reset(uint32_t i2c)
 {
 	switch (i2c) {
@@ -48,6 +48,11 @@ void i2c_reset(uint32_t i2c)
 #if defined(I2C3_BASE)
 	case I2C3:
 		rcc_periph_reset_pulse(RST_I2C3);
+		break;
+#endif
+#if defined(I2C4_BASE)
+	case I2C4:
+		rcc_periph_reset_pulse(RST_I2C4);
 		break;
 #endif
 	default:
@@ -93,7 +98,7 @@ void i2c_peripheral_disable(uint32_t i2c)
 
 void i2c_send_start(uint32_t i2c)
 {
-	I2C_CR1(i2c) |= I2C_CR1_START;
+	I2C_CR2(i2c) |= I2C_CR2_START;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -107,7 +112,7 @@ void i2c_send_start(uint32_t i2c)
 
 void i2c_send_stop(uint32_t i2c)
 {
-	I2C_CR1(i2c) |= I2C_CR1_STOP;
+	I2C_CR2(i2c) |= I2C_CR2_STOP;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -119,7 +124,7 @@ void i2c_send_stop(uint32_t i2c)
  */
 void i2c_clear_stop(uint32_t i2c)
 {
-	I2C_CR1(i2c) &= ~I2C_CR1_STOP;
+	I2C_ICR(i2c) |= I2C_ICR_STOPCF;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -133,10 +138,8 @@ void i2c_clear_stop(uint32_t i2c)
 
 void i2c_set_own_7bit_slave_address(uint32_t i2c, uint8_t slave)
 {
-	uint16_t val = (uint16_t)(slave << 1);
-	/* Datasheet: always keep 1 by software. */
-	val |= (1 << 14);
-	I2C_OAR1(i2c) = val;
+	I2C_OAR1(i2c) = (uint16_t)(slave << 1);
+	I2C_OAR1(i2c) &= ~I2C_OAR1_OA1MODE;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -150,69 +153,7 @@ void i2c_set_own_7bit_slave_address(uint32_t i2c, uint8_t slave)
 
 void i2c_set_own_10bit_slave_address(uint32_t i2c, uint16_t slave)
 {
-	I2C_OAR1(i2c) = (uint16_t)(I2C_OAR1_ADDMODE | slave);
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Set the secondary 7 bit Slave Address for the Peripheral.
-
-This sets a secondary address for Slave mode operation, in 7 bit form.
-
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-@param[in] slave Unsigned int8. Slave address 0...127.
-*/
-
-void i2c_set_own_7bit_slave_address_two(uint32_t i2c, uint8_t slave)
-{
-	uint16_t val = (uint16_t)(slave << 1);
-	I2C_OAR2(i2c) = val;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Enable dual addressing mode for the Peripheral.
-
-Both OAR1 and OAR2 are recognised in 7-bit addressing mode.
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-
-void i2c_enable_dual_addressing_mode(uint32_t i2c)
-{
-	I2C_OAR2(i2c) |= I2C_OAR2_ENDUAL;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Disable dual addressing mode for the Peripheral.
-
-Only OAR1 is recognised in 7-bit addressing mode.
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-
-void i2c_disable_dual_addressing_mode(uint32_t i2c)
-{
-	I2C_OAR2(i2c) &= ~(I2C_OAR2_ENDUAL);
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Set Peripheral Clock Frequency.
-
-Set the peripheral clock frequency: 2MHz to 36MHz (the APB frequency). Note
-that this is <b> not </b> the I2C bus clock. This is set in conjunction with
-the Clock Control register to generate the Master bus clock, see @ref
-i2c_set_ccr
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-@param[in] freq Unsigned int8. Clock Frequency Setting @ref i2c_clock.
-*/
-
-void i2c_set_clock_frequency(uint32_t i2c, uint8_t freq)
-{
-	uint16_t reg16;
-	reg16 = I2C_CR2(i2c) & 0xffc0; /* Clear bits [5:0]. */
-	reg16 |= freq;
-	I2C_CR2(i2c) = reg16;
+	I2C_OAR1(i2c) = (uint16_t)(I2C_OAR1_OA1MODE | slave);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -224,90 +165,7 @@ void i2c_set_clock_frequency(uint32_t i2c, uint8_t freq)
 
 void i2c_send_data(uint32_t i2c, uint8_t data)
 {
-	I2C_DR(i2c) = data;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Set Fast Mode.
-
-Set the clock frequency to the high clock rate mode (up to 400kHz). The actual
-clock frequency must be set with @ref i2c_set_clock_frequency
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-
-void i2c_set_fast_mode(uint32_t i2c)
-{
-	I2C_CCR(i2c) |= I2C_CCR_FS;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Set Standard Mode.
-
-Set the clock frequency to the standard clock rate mode (up to 100kHz). The
-actual clock frequency must be set with @ref i2c_set_clock_frequency
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-
-void i2c_set_standard_mode(uint32_t i2c)
-{
-	I2C_CCR(i2c) &= ~I2C_CCR_FS;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Set Bus Clock Frequency.
-
-Set the bus clock frequency. This is a 12 bit number (0...4095) calculated
-from the formulae given in the STM32F1 reference manual in the description
-of the CCR field. It is a divisor of the peripheral clock frequency
-@ref i2c_set_clock_frequency modified by the fast mode setting
-@ref i2c_set_fast_mode
-
-@todo provide additional API assitance to set the clock, eg macros
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-@param[in] freq Unsigned int16. Bus Clock Frequency Setting 0...4095.
-*/
-
-void i2c_set_ccr(uint32_t i2c, uint16_t freq)
-{
-	uint16_t reg16;
-	reg16 = I2C_CCR(i2c) & 0xf000; /* Clear bits [11:0]. */
-	reg16 |= freq;
-	I2C_CCR(i2c) = reg16;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Set the Rise Time.
-
-Set the maximum rise time on the bus according to the I2C specification, as 1
-more than the specified rise time in peripheral clock cycles. This is a 6 bit
-number.
-
-@todo provide additional APIP assistance.
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-@param[in] trise Unsigned int16. Rise Time Setting 0...63.
-*/
-
-void i2c_set_trise(uint32_t i2c, uint16_t trise)
-{
-	I2C_TRISE(i2c) = trise;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Send the 7-bit Slave Address.
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-@param[in] slave Unsigned int16. Slave address 0...1023.
-@param[in] readwrite Unsigned int8. Single bit to instruct slave to receive or
-send @ref i2c_rw.
-*/
-
-void i2c_send_7bit_address(uint32_t i2c, uint8_t slave, uint8_t readwrite)
-{
-	I2C_DR(i2c) = (uint8_t)((slave << 1) | readwrite);
+	I2C_TXDR(i2c) = data;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -317,8 +175,152 @@ void i2c_send_7bit_address(uint32_t i2c, uint8_t slave, uint8_t readwrite)
  */
 uint8_t i2c_get_data(uint32_t i2c)
 {
-	return I2C_DR(i2c) & 0xff;
+	return I2C_RXDR(i2c) & 0xff;
 }
+
+void i2c_enable_analog_filter(uint32_t i2c)
+{
+	I2C_CR1(i2c) &= ~I2C_CR1_ANFOFF;
+}
+
+void i2c_disable_analog_filter(uint32_t i2c)
+{
+	I2C_CR1(i2c) |= I2C_CR1_ANFOFF;
+}
+
+/**
+ * Set the I2C digital filter.
+ * These bits are used to configure the digital noise filter on SDA and
+ * SCL input. The digital filter will filter spikes with a length of up
+ * to dnf_setting * I2CCLK clocks
+ * @param i2c peripheral of interest
+ * @param dnf_setting 0 to disable, else 1..15 i2c clocks
+ */
+void i2c_set_digital_filter(uint32_t i2c, uint8_t dnf_setting)
+{
+	I2C_CR1(i2c) = (I2C_CR1(i2c) & ~(I2C_CR1_DNF_MASK << I2C_CR1_DNF_SHIFT)) |
+		(dnf_setting << I2C_CR1_DNF_SHIFT);
+}
+
+/* t_presc= (presc+1)*t_i2cclk */
+void i2c_set_prescaler(uint32_t i2c, uint8_t presc)
+{
+	I2C_TIMINGR(i2c) = (I2C_TIMINGR(i2c) & ~I2C_TIMINGR_PRESC_MASK) |
+			   (presc << I2C_TIMINGR_PRESC_SHIFT);
+}
+
+void i2c_set_data_setup_time(uint32_t i2c, uint8_t s_time)
+{
+	I2C_TIMINGR(i2c) = (I2C_TIMINGR(i2c) & ~I2C_TIMINGR_SCLDEL_MASK) |
+			   (s_time << I2C_TIMINGR_SCLDEL_SHIFT);
+}
+
+void i2c_set_data_hold_time(uint32_t i2c, uint8_t h_time)
+{
+	I2C_TIMINGR(i2c) = (I2C_TIMINGR(i2c) & ~I2C_TIMINGR_SDADEL_MASK) |
+			   (h_time << I2C_TIMINGR_SDADEL_SHIFT);
+}
+
+void i2c_set_scl_high_period(uint32_t i2c, uint8_t period)
+{
+	I2C_TIMINGR(i2c) = (I2C_TIMINGR(i2c) & ~I2C_TIMINGR_SCLH_MASK) |
+			   (period << I2C_TIMINGR_SCLH_SHIFT);
+}
+
+void i2c_set_scl_low_period(uint32_t i2c, uint8_t period)
+{
+	I2C_TIMINGR(i2c) = (I2C_TIMINGR(i2c) & ~I2C_TIMINGR_SCLL_MASK) |
+			   (period << I2C_TIMINGR_SCLL_SHIFT);
+}
+
+void i2c_enable_stretching(uint32_t i2c)
+{
+	I2C_CR1(i2c) &= ~I2C_CR1_NOSTRETCH;
+}
+
+void i2c_disable_stretching(uint32_t i2c)
+{
+	I2C_CR1(i2c) |= I2C_CR1_NOSTRETCH;
+}
+
+void i2c_set_7bit_addr_mode(uint32_t i2c)
+{
+	I2C_CR2(i2c) &= ~I2C_CR2_ADD10;
+}
+
+void i2c_set_10bit_addr_mode(uint32_t i2c)
+{
+	I2C_CR2(i2c) |= I2C_CR2_ADD10;
+}
+
+void i2c_set_7bit_address(uint32_t i2c, uint8_t addr)
+{
+	I2C_CR2(i2c) = (I2C_CR2(i2c) & ~I2C_CR2_SADD_7BIT_MASK) |
+		       ((addr & 0x7F) << I2C_CR2_SADD_7BIT_SHIFT);
+}
+
+void i2c_set_10bit_address(uint32_t i2c, uint16_t addr)
+{
+	I2C_CR2(i2c) = (I2C_CR2(i2c) & ~I2C_CR2_SADD_10BIT_MASK) |
+		       ((addr & 0x3FF) << I2C_CR2_SADD_10BIT_SHIFT);
+}
+
+void i2c_set_write_transfer_dir(uint32_t i2c)
+{
+	I2C_CR2(i2c) &= ~I2C_CR2_RD_WRN;
+}
+
+void i2c_set_read_transfer_dir(uint32_t i2c)
+{
+	I2C_CR2(i2c) |= I2C_CR2_RD_WRN;
+}
+
+void i2c_set_bytes_to_transfer(uint32_t i2c, uint32_t n_bytes)
+{
+	I2C_CR2(i2c) = (I2C_CR2(i2c) & ~I2C_CR2_NBYTES_MASK) |
+		       (n_bytes << I2C_CR2_NBYTES_SHIFT);
+}
+
+bool i2c_is_start(uint32_t i2c)
+{
+	return (I2C_CR2(i2c) & I2C_CR2_START);
+}
+
+void i2c_enable_autoend(uint32_t i2c)
+{
+	I2C_CR2(i2c) |= I2C_CR2_AUTOEND;
+}
+
+void i2c_disable_autoend(uint32_t i2c)
+{
+	I2C_CR2(i2c) &= ~I2C_CR2_AUTOEND;
+}
+
+bool i2c_nack(uint32_t i2c)
+{
+	return (I2C_ISR(i2c) & I2C_ISR_NACKF);
+}
+
+bool i2c_busy(uint32_t i2c)
+{
+	return (I2C_ISR(i2c) & I2C_ISR_BUSY);
+}
+
+bool i2c_transmit_int_status(uint32_t i2c)
+{
+	return (I2C_ISR(i2c) & I2C_ISR_TXIS);
+}
+
+bool i2c_transfer_complete(uint32_t i2c)
+{
+	return (I2C_ISR(i2c) & I2C_ISR_TC);
+}
+
+bool i2c_received_data(uint32_t i2c)
+{
+	return (I2C_ISR(i2c) & I2C_ISR_RXNE);
+}
+
 
 /*---------------------------------------------------------------------------*/
 /** @brief I2C Enable Interrupt
@@ -328,160 +330,157 @@ uint8_t i2c_get_data(uint32_t i2c)
  */
 void i2c_enable_interrupt(uint32_t i2c, uint32_t interrupt)
 {
-	I2C_CR2(i2c) |= interrupt;
+	I2C_CR1(i2c) |= interrupt;
 }
 
 /*---------------------------------------------------------------------------*/
 /** @brief I2C Disable Interrupt
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-@param[in] interrupt Unsigned int32. Interrupt to disable.
-*/
+ *
+ * @param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
+ * @param[in] interrupt Unsigned int32. Interrupt to disable.
+ */
 void i2c_disable_interrupt(uint32_t i2c, uint32_t interrupt)
 {
-	I2C_CR2(i2c) &= ~interrupt;
+	I2C_CR1(i2c) &= ~interrupt;
 }
 
 /*---------------------------------------------------------------------------*/
-/** @brief I2C Enable ACK
-
-Enables acking of own 7/10 bit address
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-void i2c_enable_ack(uint32_t i2c)
+/** @brief I2C Enable reception DMA
+ *
+ * @param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
+ */
+void i2c_enable_rxdma(uint32_t i2c)
 {
-	I2C_CR1(i2c) |= I2C_CR1_ACK;
+	I2C_CR1(i2c) |= I2C_CR1_RXDMAEN;
 }
 
 /*---------------------------------------------------------------------------*/
-/** @brief I2C Disable ACK
-
-Disables acking of own 7/10 bit address
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-void i2c_disable_ack(uint32_t i2c)
+/** @brief I2C Disable reception DMA
+ *
+ * @param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
+ */
+void i2c_disable_rxdma(uint32_t i2c)
 {
-	I2C_CR1(i2c) &= ~I2C_CR1_ACK;
+	I2C_CR1(i2c) &= ~I2C_CR1_RXDMAEN;
 }
 
 /*---------------------------------------------------------------------------*/
-/** @brief I2C NACK Next Byte
-
-Causes the I2C controller to NACK the reception of the next byte
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-void i2c_nack_next(uint32_t i2c)
+/** @brief I2C Enable transmission DMA
+ *
+ * @param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
+ */
+void i2c_enable_txdma(uint32_t i2c)
 {
-	I2C_CR1(i2c) |= I2C_CR1_POS;
+	I2C_CR1(i2c) |= I2C_CR1_TXDMAEN;
 }
 
 /*---------------------------------------------------------------------------*/
-/** @brief I2C NACK Next Byte
-
-Causes the I2C controller to NACK the reception of the current byte
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-void i2c_nack_current(uint32_t i2c)
+/** @brief I2C Disable transmission DMA
+ *
+ * @param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
+ */
+void i2c_disable_txdma(uint32_t i2c)
 {
-	I2C_CR1(i2c) &= ~I2C_CR1_POS;
+	I2C_CR1(i2c) &= ~I2C_CR1_TXDMAEN;
 }
 
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Set clock duty cycle
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-@param[in] dutycycle Unsigned int32. I2C duty cycle @ref i2c_duty_cycle.
-*/
-void i2c_set_dutycycle(uint32_t i2c, uint32_t dutycycle)
+/**
+ * Run a write/read transaction to a given 7bit i2c address
+ * If both write & read are provided, the read will use repeated start.
+ * Both write and read are optional
+ * @param i2c peripheral of choice, eg I2C1
+ * @param addr 7 bit i2c device address
+ * @param w buffer of data to write
+ * @param wn length of w
+ * @param r destination buffer to read into
+ * @param rn number of bytes to read (r should be at least this long)
+ */
+void i2c_transfer7(uint32_t i2c, uint8_t addr, uint8_t *w, size_t wn, uint8_t *r, size_t rn)
 {
-	if (dutycycle == I2C_CCR_DUTY_DIV2) {
-		I2C_CCR(i2c) &= ~I2C_CCR_DUTY;
-	} else {
-		I2C_CCR(i2c) |= I2C_CCR_DUTY;
+	/*  waiting for busy is unnecessary. read the RM */
+	if (wn) {
+		i2c_set_7bit_address(i2c, addr);
+		i2c_set_write_transfer_dir(i2c);
+		i2c_set_bytes_to_transfer(i2c, wn);
+		if (rn) {
+			i2c_disable_autoend(i2c);
+		} else {
+			i2c_enable_autoend(i2c);
+		}
+		i2c_send_start(i2c);
+
+		while (wn--) {
+			bool wait = true;
+			while (wait) {
+				if (i2c_transmit_int_status(i2c)) {
+					wait = false;
+				}
+				while (i2c_nack(i2c)); /* FIXME Some error */
+			}
+			i2c_send_data(i2c, *w++);
+		}
+		/* not entirely sure this is really necessary.
+		 * RM implies it will stall until it can write out the later bits
+		 */
+		if (rn) {
+			while (!i2c_transfer_complete(i2c));
+		}
+	}
+
+	if (rn) {
+		/* Setting transfer properties */
+		i2c_set_7bit_address(i2c, addr);
+		i2c_set_read_transfer_dir(i2c);
+		i2c_set_bytes_to_transfer(i2c, rn);
+		/* start transfer */
+		i2c_send_start(i2c);
+		/* important to do it afterwards to do a proper repeated start! */
+		i2c_enable_autoend(i2c);
+
+		for (size_t i = 0; i < rn; i++) {
+			while (i2c_received_data(i2c) == 0);
+			r[i] = i2c_get_data(i2c);
+		}
 	}
 }
 
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Enable DMA
 
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-void i2c_enable_dma(uint32_t i2c)
+/**
+ * Set the i2c communication speed.
+ * NOTE: 1MHz mode not yet implemented!
+ * Min clock speed: 8MHz for FM, 2Mhz for SM,
+ * @param i2c peripheral, eg I2C1
+ * @param speed one of the listed speed modes @ref i2c_speeds
+ * @param clock_megahz i2c peripheral clock speed in MHz. Usually, rcc_apb1_frequency / 1e6
+ */
+void i2c_set_speed(uint32_t i2c, enum i2c_speeds speed, uint32_t clock_megahz)
 {
-	I2C_CR2(i2c) |= I2C_CR2_DMAEN;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Disable DMA
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-void i2c_disable_dma(uint32_t i2c)
-{
-	I2C_CR2(i2c) &= ~I2C_CR2_DMAEN;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Set DMA last transfer
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-void i2c_set_dma_last_transfer(uint32_t i2c)
-{
-	I2C_CR2(i2c) |= I2C_CR2_LAST;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Clear DMA last transfer
-
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-*/
-void i2c_clear_dma_last_transfer(uint32_t i2c)
-{
-	I2C_CR2(i2c) &= ~I2C_CR2_LAST;
-}
-
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Set Bus Speed
-
-@param[in] i2c uint32_t I2C register base address @ref i2c_reg_base.
-@param[in] fast uint8_t Fast (400Khz) or Slow (100Khz) speed
-
-Note: this function has to disable the device while setting clock speeds
-and so it may lose other settings you've made. Please call it first,
-then make any addition changes to the settings to complete your setup
-such as enabling interrupts, dma, etc.
-
-Also when you set "fast" mode you get the common 1:2 clock duty cycle,
-if you want the more complext 9:16 duty cycle that the chip does support
-then you will need to program the FREQ and CCR registers directly
-with the @ref i2c_set_ccr and @ref i2c_set_clock_frequency calls.
-*/
-void i2c_set_speed(uint32_t i2c, uint8_t fast)
-{
-	int	freq;
-	uint32_t reg;
-
-	/* force disable, to set clocks */
-	I2C_CR1(i2c) &= ~(I2C_CR1_PE);
-
-	/* frequency in megahertz */
-	freq = rcc_apb1_frequency / 1000000;
-	reg = (I2C_CR2(i2c) & ~(I2C_CR2_FREQ_MASK)) | (freq & I2C_CR2_FREQ_MASK);
-	I2C_CR2(i2c) = reg;
-
-	if (fast) {
-		I2C_CCR(i2c) = I2C_CCR_FS | (((freq * 5) / 6) & I2C_CCR_CCRMASK);
-	} else {
-		I2C_CCR(i2c) = (freq * 5) & I2C_CCR_CCRMASK;
+	int prescaler;
+	switch(speed) {
+	case i2c_speed_fmp_1m:
+		/* FIXME - add support for this mode! */
+		break;
+	case i2c_speed_fm_400k:
+		/* target 8Mhz input, so tpresc = 125ns */
+		prescaler = clock_megahz / 8 - 1;
+		i2c_set_prescaler(i2c, prescaler);
+		i2c_set_scl_low_period(i2c, 10-1); // 1250ns
+		i2c_set_scl_high_period(i2c, 4-1); // 500ns
+		i2c_set_data_hold_time(i2c, 3); // 375ns
+		i2c_set_data_setup_time(i2c, 4-1); // 500ns
+		break;
+	default:
+		/* fall back to standard mode */
+	case i2c_speed_sm_100k:
+		/* target 4Mhz input, so tpresc = 250ns */
+		prescaler = (clock_megahz / 4) - 1;
+		i2c_set_prescaler(i2c, prescaler);
+		i2c_set_scl_low_period(i2c, 20-1); // 5usecs
+		i2c_set_scl_high_period(i2c, 16-1); // 4usecs
+		i2c_set_data_hold_time(i2c, 2); // 0.5usecs
+		i2c_set_data_setup_time(i2c, 5-1); // 1.25usecs
+		break;
 	}
-
-	/* set rise time to 1000ns */
-	reg = (I2C_TRISE(i2c) & ~(I2C_TRISE_MASK)) | ((freq + 1) & I2C_TRISE_MASK);
-	I2C_TRISE(i2c) = reg;
-	/* enable i2c device */
-	I2C_CR1(i2c) |= I2C_CR1_PE;
 }
 
 /**@}*/

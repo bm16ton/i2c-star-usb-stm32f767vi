@@ -1,6 +1,5 @@
-/** @defgroup dma_file DMA peripheral API
+/** @addtogroup dma_file DMA peripheral API
 @ingroup peripheral_apis
-@brief DMA library for the multi stream controller found in f2/f4/f7 parts.
 
 @author @htmlonly &copy; @endhtmlonly 2012
 Ken Sarkies <ksarkies@internode.on.net>

@@ -29,6 +29,8 @@
 #include <libopencm3/stm32/i2c.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
+#include <libopencm3/usb/dwc/otg_common.h>
+#include <libopencm3/usb/dwc/otg_fs.h>
 #include <librfn/fibre.h>
 #include <librfn/time.h>
 #include <librfn/util.h>
@@ -324,10 +326,9 @@ static int usb_fibre(fibre_t *fibre)
 	usbd_dev = usbd_init(&otgfs_usb_driver, &dev, &config,
 			usb_strings, 2,
 			usbd_control_buffer, sizeof(usbd_control_buffer));
-
+	OTG_FS_GCCFG |= OTG_GCCFG_NOVBUSSENS;
+	OTG_FS_GUSBCFG |= OTG_GUSBCFG_FDMOD;
 	usbd_register_set_config_callback(usbd_dev, usb_set_config);
-
-
 
 	while (true) {
 		usbd_poll(usbd_dev);
@@ -350,10 +351,10 @@ static void i2c_init(void)
 	i2c_ctx_reset(&ctx);
 
 	/* GPIO for I2C1 */
-	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO8 | GPIO9);
+	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO6 | GPIO7);
 	gpio_set_output_options(GPIOB, GPIO_OTYPE_OD, GPIO_OSPEED_100MHZ,
-				GPIO8 | GPIO9);
-	gpio_set_af(GPIOB, GPIO_AF4, GPIO8 | GPIO9);
+				GPIO6 | GPIO7);
+	gpio_set_af(GPIOB, GPIO_AF4, GPIO6 | GPIO7);
 
 	/* take the DAC out of reset (so there is something in the bus) */
 //	rcc_periph_clock_enable(RCC_GPIOD);
@@ -365,8 +366,7 @@ int main(void)
 {
 	int i;
 
-        //rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_168MHZ]);
-        rcc_clock_setup_pll(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_84MHZ]);
+        rcc_clock_setup_pll(&rcc_hse_25mhz_3v3[RCC_CLOCK_3V3_84MHZ]);
 
 	rcc_periph_clock_enable(RCC_GPIOA);
 	rcc_periph_clock_enable(RCC_GPIOB);

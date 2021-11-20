@@ -44,7 +44,7 @@
 # No support for magically finding the library.
 # C++ hasn't been actually tested with this..... sorry bout that. ;)
 # Second expansion/secondary not set, add this if you need them.
-#OPENCM3_LIB = opencm3_stm32f7
+
 BUILD_DIR ?= bin
 OPT ?= -Os
 CSTD ?= -std=c99

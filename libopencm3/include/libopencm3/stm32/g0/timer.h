@@ -27,7 +27,9 @@
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#ifndef LIBOPENCM3_TIMER_H
+#define LIBOPENCM3_TIMER_H
+
 #include <libopencm3/stm32/common/timer_common_all.h>
 
 /**@{*/
@@ -68,3 +70,5 @@ BEGIN_DECLS
 END_DECLS
 
 /**@}*/
+
+#endif

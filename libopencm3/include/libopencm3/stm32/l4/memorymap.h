@@ -105,13 +105,10 @@
 #define GPIO_PORT_G_BASE		(PERIPH_BASE_AHB2 + 0x1800)
 #define GPIO_PORT_H_BASE		(PERIPH_BASE_AHB2 + 0x1c00)
 /* Still AHB2, good job ST */
-#define USB_OTG_FS_BASE		(0x50000000U + 0x00000)
+#define OTG_FS_BASE			(0x50000000U + 0x00000)
 #define ADC1_BASE			(0x50000000U + 0x40000)
 #define AES_BASE			(0x50000000U + 0x60000)
 #define RNG_BASE			(0x50000000U + 0x60800)
-
-#define FMC_BASE		(0xa0000000U)
-#define QUADSPI_BASE		(0xa0001000U)
 
 /* Private peripherals */
 #define DBGMCU_BASE			(PPBI_BASE + 0x00042000)

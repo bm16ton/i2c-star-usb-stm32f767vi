@@ -32,10 +32,9 @@
 
 /**@{*/
 
-/** @addtogroup flash_acr_values FLASH_ACR values
+/** @addtogroup flash_acr_values FLASH_ACR_VALUES
  * @ingroup flash_registers
- * @{
- */
+@{*/
 #define FLASH_ACR_WRHF_VOS1_70MHZ     (0 << FLASH_ACR_WRHIGHFREQ_SHIFT)
 #define FLASH_ACR_WRHF_VOS1_185MHZ    (1 << FLASH_ACR_WRHIGHFREQ_SHIFT)
 #define FLASH_ACR_WRHF_VOS1_225MHZ    (2 << FLASH_ACR_WRHIGHFREQ_SHIFT)
@@ -45,7 +44,7 @@
 #define FLASH_ACR_WRHF_VOS3_45MHZ     (0 << FLASH_ACR_WRHIGHFREQ_SHIFT)
 #define FLASH_ACR_WRHF_VOS3_135MHZ    (1 << FLASH_ACR_WRHIGHFREQ_SHIFT)
 #define FLASH_ACR_WRHF_VOS3_225MHZ    (2 << FLASH_ACR_WRHIGHFREQ_SHIFT)
-/**@}*/
+/*@}*/
 #define FLASH_ACR_WRHIGHFREQ_MASK     (0x3)
 #define FLASH_ACR_WRHIGHFREQ_SHIFT    (0x4)
 

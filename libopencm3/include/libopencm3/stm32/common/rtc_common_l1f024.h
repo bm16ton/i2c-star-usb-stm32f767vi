@@ -1,14 +1,8 @@
 /** @addtogroup rtc_defines
- * @author @htmlonly &copy; @endhtmlonly 2012 Karl Palsson <karlp@tweak.net.au>
- *
- * @brief This covers the "version 2" RTC peripheral.
- *
- * This is completely different
- * to the v1 RTC periph on the F1 series devices.  It has BCD counters, with
- * automatic leapyear corrections and daylight savings support.
- * This peripheral is used on the F0, F2, F3, F4 and L1 devices, though some
- * only support a subset.
- */
+
+@author @htmlonly &copy; @endhtmlonly 2012 Karl Palsson <karlp@tweak.net.au>
+
+*/
 /*
  * This file is part of the libopencm3 project.
  *
@@ -28,6 +22,14 @@
  * along with this library.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * This covers the "version 2" RTC peripheral.  This is completely different
+ * to the v1 RTC periph on the F1 series devices.  It has BCD counters, with
+ * automatic leapyear corrections and daylight savings support.
+ * This peripheral is used on the F0, F2, F3, F4 and L1 devices, though some
+ * only support a subset.
+ */
+
 /* THIS FILE SHOULD NOT BE INCLUDED DIRECTLY, BUT ONLY VIA RTC.H
 The order of header inclusion is important. rtc.h includes the device
 specific memorymap.h header before including this header file.*/
@@ -37,8 +39,6 @@ specific memorymap.h header before including this header file.*/
 /** @endcond */
 #ifndef LIBOPENCM3_RTC2_H
 #define LIBOPENCM3_RTC2_H
-
-/**@{*/
 
 /** @defgroup rtc_registers RTC Registers
  * @ingroup rtc_defines
@@ -100,7 +100,7 @@ specific memorymap.h header before including this header file.*/
 /** RTC backup registers (RTC_BKPxR) */
 #define RTC_BKPXR(reg)  MMIO32(RTC_BKP_BASE + (4 * (reg)))
 
-/**@}*/
+/*@}*/
 
 
 /** @defgroup rtc_tr_values RTC Time register (RTC_TR) values
@@ -133,7 +133,7 @@ specific memorymap.h header before including this header file.*/
 #define RTC_TR_SU_SHIFT   (0)
 /** Second units in BCD format mask */
 #define RTC_TR_SU_MASK    (0xf)
-/**@}*/
+/*@}*/
 
 /** @defgroup rtc_dr_values RTC Date register (RTC_DR) values
  * @ingroup rtc_registers
@@ -167,7 +167,7 @@ specific memorymap.h header before including this header file.*/
 #define RTC_DR_DU_SHIFT   (0)
 /** Date units in BCD format mask */
 #define RTC_DR_DU_MASK    (0xf)
-/**@}*/
+/*@}*/
 
 /** @defgroup rtc_cr_values RTC control register (RTC_CR) values
  * @ingroup rtc_registers
@@ -191,7 +191,7 @@ specific memorymap.h header before including this header file.*/
 #define RTC_CR_OSEL_ALARMA      (0x1)
 #define RTC_CR_OSEL_ALARMB      (0x2)
 #define RTC_CR_OSEL_WAKEUP      (0x3)
-/**@}*/
+/*@}*/
 
 /** Output polarity */
 #define RTC_CR_POL              (1<<20)
@@ -239,7 +239,7 @@ specific memorymap.h header before including this header file.*/
 #define RTC_CR_WUCLKSEL_RTC_DIV2   (0x3)
 #define RTC_CR_WUCLKSEL_SPRE       (0x4)
 #define RTC_CR_WUCLKSEL_SPRE_216   (0x6)
-/**@}*/
+/*@}*/
 
 /** @defgroup rtc_isr_values RTC initialization and status register (RTC_ISR) values
  * @ingroup rtc_registers
@@ -280,7 +280,7 @@ specific memorymap.h header before including this header file.*/
 #define RTC_ISR_ALRBWF             (1<<1)
 /** ALRAWF: Alarm A write flag */
 #define RTC_ISR_ALRAWF             (1<<0)
-/**@}*/
+/*@}*/
 
 /** @defgroup rtc_prer_values RTC prescaler register (RTC_PRER) values
  * @ingroup rtc_registers
@@ -293,7 +293,7 @@ specific memorymap.h header before including this header file.*/
 #define RTC_PRER_PREDIV_S_SHIFT   (0)
 /** Sync prescaler factor mask */
 #define RTC_PRER_PREDIV_S_MASK    (0x7fff)
-/**@}*/
+/*@}*/
 
 /* RTC calibration register (RTC_CALIBR) ------------------------ */
 #define RTC_CALIBR_DCS            (1 << 7)
@@ -327,10 +327,10 @@ specific memorymap.h header before including this header file.*/
 #define RTC_ALRMXR_ST_MASK        (0x7)
 #define RTC_ALRMXR_SU_SHIFT       (0)
 #define RTC_ALRMXR_SU_MASK        (0xf)
-/**@}*/
+/*@}*/
 
 /* RTC shift control register (RTC_SHIFTR) ---------------------- */
-#define RTC_SHIFTR_ADD1S          (1<<31)
+#define RTC_SHIFTR_ADD1S          (31)
 
 #define RTC_SHIFTR_SUBFS_SHIFT    (0)
 #define RTC_SHIFTR_SUBFS_MASK     (0x7fff)
@@ -351,7 +351,7 @@ specific memorymap.h header before including this header file.*/
 #define RTC_TSTR_ST_MASK          (0x7)
 #define RTC_TSTR_SU_SHIFT         (0)
 #define RTC_TSTR_SU_MASK          (0xf)
-/**@}*/
+/*@}*/
 
 /** @defgroup rtc_tsdr_values RTC time stamp date register (RTC_TSDR) values
  * @ingroup rtc_registers
@@ -365,7 +365,7 @@ specific memorymap.h header before including this header file.*/
 #define RTC_TSDR_DT_MASK          (0x3)
 #define RTC_TSDR_DU_SHIFT         (0)
 #define RTC_TSDR_DU_MASK          (0xf)
-/**@}*/
+/*@}*/
 
 /** @defgroup rtc_calr_values RTC calibration register (RTC_CALR) values
  * @ingroup rtc_registers
@@ -375,7 +375,7 @@ specific memorymap.h header before including this header file.*/
 #define RTC_CALR_CALW16           (1 << 13)
 #define RTC_CALR_CALM_SHIFT       (0)
 #define RTC_CALR_CALM_MASK        (0x1ff)
-/**@}*/
+/*@}*/
 
 /** @defgroup rtc_tafcr_values RTC tamper and alternate function configuration register (RTC_TAFCR) values
  * @ingroup rtc_registers
@@ -416,7 +416,7 @@ specific memorymap.h header before including this header file.*/
 #define RTC_TAFCR_TAMPIE          (1<<2)
 #define RTC_TAFCR_TAMP1TRG        (1<<1)
 #define RTC_TAFCR_TAMP1E          (1<<0)
-/**@}*/
+/*@}*/
 
 /* RTC alarm X sub second register ------------------------------ */
 /* Note: Applies to RTC_ALRMASSR and RTC_ALRMBSSR */

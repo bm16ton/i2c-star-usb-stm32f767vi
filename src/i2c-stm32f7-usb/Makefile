@@ -20,7 +20,7 @@
 BINARY = i2c-stm32f7-usb
 
 DEFS += -DF_CPU=216000000
-DEFS += -DF_APB1=54000000
+DEFS += -DF_APB1=48000000
 
 LDSCRIPT = ../stm32f7.ld
 include ../../mk/libopencm3.stm32f7xx.mk
