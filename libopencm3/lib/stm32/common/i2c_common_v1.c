@@ -41,40 +41,6 @@ register access, Error conditions
 
 /**@{*/
 
-/*---------------------------------------------------------------------------*/
-/** @brief I2C Reset.
-
-The I2C peripheral and all its associated configuration registers are placed in
-the reset condition. The reset is effected via the RCC peripheral reset system.
-
-@param[in] i2c Unsigned int32. I2C peripheral identifier @ref i2c_reg_base.
-*/
-
-void i2c_reset(uint32_t i2c)
-{
-	switch (i2c) {
-	case I2C1:
-		rcc_periph_reset_pulse(RST_I2C1);
-		break;
-#if defined(I2C2_BASE)
-	case I2C2:
-		rcc_periph_reset_pulse(RST_I2C2);
-		break;
-#endif
-#if defined(I2C3_BASE)
-	case I2C3:
-		rcc_periph_reset_pulse(RST_I2C3);
-		break;
-#endif
-#if defined(I2C4_BASE)
-	case I2C4:
-		rcc_periph_reset_pulse(RST_I2C4);
-		break;
-#endif
-	default:
-		break;
-	}
-}
 
 /*---------------------------------------------------------------------------*/
 /** @brief I2C Peripheral Enable.
@@ -225,8 +191,9 @@ that this is <b> not </b> the I2C bus clock. This is set in conjunction with
 the Clock Control register to generate the Master bus clock, see @ref
 i2c_set_ccr
 
-@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
-@param[in] freq Unsigned int8. Clock Frequency Setting @ref i2c_clock.
+@param[in] i2c I2C register base address @ref i2c_reg_base
+@param[in] freq Clock Frequency Setting in MHz, valid range depends on part,+
+  normally 2Mhz->Max APB speed.
 */
 
 void i2c_set_clock_frequency(uint32_t i2c, uint8_t freq)
@@ -464,16 +431,17 @@ void i2c_clear_dma_last_transfer(uint32_t i2c)
 	I2C_CR2(i2c) &= ~I2C_CR2_LAST;
 }
 
-static void i2c_write7_v1(uint32_t i2c, int addr, uint8_t *data, size_t n)
+static void i2c_write7_v1(uint32_t i2c, int addr, const uint8_t *data, size_t n)
 {
 	while ((I2C_SR2(i2c) & I2C_SR2_BUSY)) {
 	}
 
 	i2c_send_start(i2c);
 
-	/* Wait for master mode selected */
-	while (!((I2C_SR1(i2c) & I2C_SR1_SB)
-		& (I2C_SR2(i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
+	/* Wait for the end of the start condition, master mode selected, and BUSY bit set */
+	while ( !( (I2C_SR1(i2c) & I2C_SR1_SB)
+		&& (I2C_SR2(i2c) & I2C_SR2_MSL)
+		&& (I2C_SR2(i2c) & I2C_SR2_BUSY) ));
 
 	i2c_send_7bit_address(i2c, addr, I2C_WRITE);
 
@@ -494,9 +462,10 @@ static void i2c_read7_v1(uint32_t i2c, int addr, uint8_t *res, size_t n)
 	i2c_send_start(i2c);
 	i2c_enable_ack(i2c);
 
-	/* Wait for master mode selected */
-	while (!((I2C_SR1(i2c) & I2C_SR1_SB)
-		& (I2C_SR2(i2c) & (I2C_SR2_MSL | I2C_SR2_BUSY))));
+	/* Wait for the end of the start condition, master mode selected, and BUSY bit set */
+	while ( !( (I2C_SR1(i2c) & I2C_SR1_SB)
+		&& (I2C_SR2(i2c) & I2C_SR2_MSL)
+		&& (I2C_SR2(i2c) & I2C_SR2_BUSY) ));
 
 	i2c_send_7bit_address(i2c, addr, I2C_READ);
 
@@ -529,7 +498,7 @@ static void i2c_read7_v1(uint32_t i2c, int addr, uint8_t *res, size_t n)
  * @param r destination buffer to read into
  * @param rn number of bytes to read (r should be at least this long)
  */
-void i2c_transfer7(uint32_t i2c, uint8_t addr, uint8_t *w, size_t wn, uint8_t *r, size_t rn) {
+void i2c_transfer7(uint32_t i2c, uint8_t addr, const uint8_t *w, size_t wn, uint8_t *r, size_t rn) {
 	if (wn) {
 		i2c_write7_v1(i2c, addr, w, wn);
 	}

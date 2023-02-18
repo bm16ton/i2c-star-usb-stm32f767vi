@@ -22,7 +22,8 @@ PREFIX		?= arm-none-eabi-
 STYLECHECK      := scripts/checkpatch.pl
 STYLECHECKFLAGS := --no-tree -f --terse --mailback
 
-TARGETS ?=	stm32/f7
+TARGETS ?=	stm32/f7 
+	
 
 # Be silent per default, but 'make V=1' will show all compiler calls.
 ifneq ($(V),1)
@@ -33,6 +34,10 @@ endif
 
 # Avoid the use of shell find, for windows compatibility
 IRQ_DEFN_FILES  := $(foreach TARGET,$(TARGETS),$(wildcard include/libopencm3/$(TARGET)/irq.json))
+NVIC_H := $(IRQ_DEFN_FILES:%/irq.json=%/nvic.h)
+VECTOR_NVIC_C := $(IRQ_DEFN_FILES:./include/libopencm3/%/irq.json=./lib/%/vector_nvic.c)
+IRQHANDLERS_H := $(IRQ_DEFN_FILES:./include/libopencm3/%/irq.json=./include/libopencmsis/%/irqhandlers.h)
+IRQ_GENERATED_FILES = $(NVIC_H) $(VECTOR_NVIC_C) $(IRQHANDLERS_H)
 STYLECHECKFILES := $(wildcard include/*/*.h include/*/*/*.h include/*/*/*/*.h)
 STYLECHECKFILES += $(wildcard lib/*/*.h lib/*/*/*.h lib/*/*/*/*.h)
 STYLECHECKFILES += $(wildcard lib/*/*.c lib/*/*/*.c lib/*/*/*/*.c)
@@ -41,16 +46,16 @@ all: build
 
 build: lib
 
-%.genhdr:
+include/libopencm3/%/nvic.h lib/%/vector_nvic.c include/libopencmsis/%/irqhandlers.h: include/libopencm3/%/irq.json ./scripts/irq2nvic_h
 	@printf "  GENHDR  $*\n";
-	$(Q)./scripts/irq2nvic_h ./$*;
+	$(Q)./scripts/irq2nvic_h ./$<;
 
 %.cleanhdr:
 	@printf "  CLNHDR  $*\n";
 	$(Q)./scripts/irq2nvic_h --remove ./$*
 
 LIB_DIRS:=$(wildcard $(addprefix lib/,$(TARGETS)))
-$(LIB_DIRS): $(IRQ_DEFN_FILES:=.genhdr)
+$(LIB_DIRS): $(IRQ_GENERATED_FILES)
 	$(Q)$(RM) .stamp_failure_$(subst /,_,$@)
 	@printf "  BUILD   $@\n";
 	$(Q)$(MAKE) --directory=$@ PREFIX="$(PREFIX)" || \
@@ -107,5 +112,7 @@ genlinktests.clean:
 		printf "  TEST FAIL : $*\n";		\
 	fi;
 
+list-targets:
+	@echo $(TARGETS)
 
-.PHONY: build lib $(LIB_DIRS) doc clean generatedheaders cleanheaders stylecheck genlinktests genlinktests.clean
+.PHONY: build lib $(LIB_DIRS) doc clean generatedheaders cleanheaders stylecheck genlinktests genlinktests.clean list-targets

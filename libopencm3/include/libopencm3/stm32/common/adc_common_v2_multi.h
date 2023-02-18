@@ -58,7 +58,7 @@ specific memorymap.h header before including this header file.*/
 #define ADC_SQR4(adc)		MMIO32((adc) + 0x3C)
 
 /* Injected Sequence Register (ADCx_JSQR, x=1..4) JSQR */
-#define ADC_JSQR(adc)		MMIO32((adc) + 0x30)
+#define ADC_JSQR(adc)		MMIO32((adc) + 0x4c)
 
 /* Offset Register x (ADCx_OFRy, x=1..4) (y=1..4) OFRy */
 #define ADC_OFR1(adc)		MMIO32((adc) + 0x60)
@@ -142,11 +142,6 @@ specific memorymap.h header before including this header file.*/
 #define ADC_CFGR1_DISCNUM_SHIFT	17
 #define ADC_CFGR1_DISCNUM_MASK  (0x7 << ADC_CFGR1_DISCNUM_SHIFT)
 #define ADC_CFGR1_DISCNUM_VAL(x)	(((x) - 1) << ADC_CFGR1_DISCNUM_SHIFT)
-
-/* EXTSEL[3:0]: External trigger selection for regular group */
-#define ADC_CFGR1_EXTSEL_SHIFT		6
-#define ADC_CFGR1_EXTSEL_MASK		(0xf << ADC_CFGR1_EXTSEL_SHIFT)
-#define ADC_CFGR1_EXTSEL_VAL(x)		((x) << ADC_CFGR1_EXTSEL_SHIFT)
 
 /* ADC_SQRx Values: Regular Sequence ordering------------------------------- */
 

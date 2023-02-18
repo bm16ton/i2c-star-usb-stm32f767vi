@@ -28,12 +28,7 @@
 The order of header inclusion is important. timer.h includes the device
 specific memorymap.h header before including this header file.*/
 
-/** @cond */
-#if defined(LIBOPENCM3_TIMER_H)
-/** @endcond */
-#ifndef LIBOPENCM3_TIMER_COMMON_H
-#define LIBOPENCM3_TIMER_COMMON_H
-
+#pragma once
 /* --- Convenience macros -------------------------------------------------- */
 
 /* Timer register base addresses (for convenience) */
@@ -1148,6 +1143,12 @@ enum tim_et_pol {
 	TIM_ET_FALLING,
 };
 
+/** External clock mode 2 */
+enum tim_ecm2_state {
+    TIM_ECM2_DISABLED,
+    TIM_ECM2_ENABLED,
+};
+
 /* --- TIM function prototypes --------------------------------------------- */
 
 BEGIN_DECLS
@@ -1238,13 +1239,9 @@ void timer_slave_set_prescaler(uint32_t timer, enum tim_ic_psc psc);
 void timer_slave_set_polarity(uint32_t timer, enum tim_et_pol pol);
 void timer_slave_set_mode(uint32_t timer, uint8_t mode);
 void timer_slave_set_trigger(uint32_t timer, uint8_t trigger);
+void timer_slave_set_extclockmode2(uint32_t timer_peripheral,
+            enum tim_ecm2_state state);
 
 END_DECLS
 
-#endif
-/** @cond */
-#else
-#warning "timer_common_all.h should not be included directly, only via timer.h"
-#endif
-/** @endcond */
 /**@}*/

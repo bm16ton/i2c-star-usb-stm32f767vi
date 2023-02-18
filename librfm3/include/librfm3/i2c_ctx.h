@@ -31,6 +31,7 @@
  *
  * @{
  */
+extern uint16_t i2caddr;
 
 typedef struct i2c_ctx {
 	pt_t pt;      //!< Protothread state for high-level functions
@@ -67,7 +68,7 @@ void i2c_ctx_reset(i2c_ctx_t *c);
  *
  * \note This is a low-level protothread; c->leaf must be zeroed by PT_SPAWN().
  */
-pt_state_t i2c_ctx_start(i2c_ctx_t *c);
+pt_state_t i2c_ctx_start(i2c_ctx_t *c, uint16_t addr, uint16_t size, int dir);
 
 /*!
  * \brief Send the target bus address.
@@ -85,14 +86,14 @@ pt_state_t i2c_ctx_sendaddr(i2c_ctx_t *c, uint16_t addr, uint8_t bytes_to_read);
  *
  * \note This is a low-level protothread; c->leaf must be zeroed by PT_SPAWN().
  */
-pt_state_t i2c_ctx_senddata(i2c_ctx_t *c, uint8_t data);
+pt_state_t i2c_ctx_senddata(i2c_ctx_t *c, uint8_t *data, uint16_t size);
 
 /*!
  * \brief Read a single byte.
  *
  * \note This is a low-level protothread; c->leaf must be zeroed by PT_SPAWN().
  */
-pt_state_t i2c_ctx_getdata(i2c_ctx_t *c, uint8_t *data);
+pt_state_t i2c_ctx_getdata(i2c_ctx_t *c, uint8_t *data, uint16_t size);
 
 /*!
  * \brief Send a stop condition.
@@ -111,40 +112,6 @@ pt_state_t i2c_ctx_stop(i2c_ctx_t *c);
  *
  * \note This is a high-level protothread; c->pt must be zeroed by PT_SPAWN().
  */
-pt_state_t i2c_ctx_detect(i2c_ctx_t *c, i2c_device_map_t *map);
-
-/*!
- * \brief Write to an I2C register.
- *
- * \note This is a high-level protothread; c->pt must be zeroed by PT_SPAWN().
- *
- * \todo API leaves space for 16-bit addresses and registers but this
- *       is not implemented.
- */
-pt_state_t i2c_ctx_setreg(i2c_ctx_t *c, uint16_t addr, uint16_t reg,
-			  uint8_t val);
-
-/*!
- * \brief Read from an I2C register.
- *
- * \note This is a high-level protothread; c->pt must be zeroed by PT_SPAWN().
- *
- * \todo API leaves space for 16-bit addresses and registers but this
- *       is not implemented.
- */
-pt_state_t i2c_ctx_getreg(i2c_ctx_t *c, uint16_t addr, uint16_t reg,
-			  uint8_t *val);
-
-/*!
- * \brief Burst write to an I2C device.
- *
- * Primarily used for writes to memory devices or to initialize devices
- * whose registers can be written to continuously (without a stop/restart).
- *
- * \note This is a high-level protothread; c->pt must be zeroed by PT_SPAWN().
- */
-pt_state_t i2c_ctx_write(i2c_ctx_t *c, uint16_t addr, uint8_t *data,
-			 uint8_t len);
 
 /*! @} */
 

@@ -149,6 +149,7 @@ Control</b>
 
 #define RCC_CFGR_PPRE_SHIFT			8
 #define RCC_CFGR_PPRE				(7 << RCC_CFGR_PPRE_SHIFT)
+#define RCC_CFGR_PPRE_MASK			0x7
 /** @defgroup rcc_cfgr_apb1pre RCC_CFGR APB prescale Factors
 @{*/
 #define RCC_CFGR_PPRE_NODIV			(0 << RCC_CFGR_PPRE_SHIFT)
@@ -160,6 +161,7 @@ Control</b>
 
 #define RCC_CFGR_HPRE_SHIFT			4
 #define RCC_CFGR_HPRE				(0xf << RCC_CFGR_HPRE_SHIFT)
+#define RCC_CFGR_HPRE_MASK			0xf
 /** @defgroup rcc_cfgr_ahbpre RCC_CFGR AHB prescale Factors
 @{*/
 #define RCC_CFGR_HPRE_NODIV			(0x0 << RCC_CFGR_HPRE_SHIFT)
@@ -383,27 +385,29 @@ Control</b>
 /**@}*/
 
 /* --- RCC_CFGR3 values ---------------------------------------------------- */
-
+/** @defgroup rcc_cfgr3_uart_choices UART for clock source selecting
+ * @note This is only used internally.
+ * @{
+ */
+#define RCC_CFGR3_USART3SW_SHIFT		18
 #define RCC_CFGR3_USART2SW_SHIFT		16
-#define RCC_CFGR3_USART2SW			(3 << RCC_CFGR3_USART2SW_SHIFT)
-#define RCC_CFGR3_USART2SW_PCLK			(0 << RCC_CFGR3_USART2SW_SHIFT)
-#define RCC_CFGR3_USART2SW_SYSCLK		(1 << RCC_CFGR3_USART2SW_SHIFT)
-#define RCC_CFGR3_USART2SW_LSE			(2 << RCC_CFGR3_USART2SW_SHIFT)
-#define RCC_CFGR3_USART2SW_HSI			(3 << RCC_CFGR3_USART2SW_SHIFT)
+#define RCC_CFGR3_USART1SW_SHIFT		0
+/**@}*/
+
+/** @defgroup rcc_cfgr3_uart_clksel UART Clock source selections
+ * @{
+ */
+#define RCC_CFGR3_USARTxSW_PCLK			0x0
+#define RCC_CFGR3_USARTxSW_SYSCLK		0x1
+#define RCC_CFGR3_USARTxSW_LSE			0x2
+#define RCC_CFGR3_USARTxSW_HSI			0x3
+/**@}*/
+#define RCC_CFGR3_USARTxSW_MASK			0x3
 
 #define RCC_CFGR3_ADCSW				(1 << 8)
 #define RCC_CFGR3_USBSW				(1 << 7)
 #define RCC_CFGR3_CECSW				(1 << 6)
 #define RCC_CFGR3_I2C1SW			(1 << 4)
-
-#define RCC_CFGR3_USART1SW_SHIFT		0
-#define RCC_CFGR3_USART1SW			(3 << RCC_CFGR3_USART1SW_SHIFT)
-#define RCC_CFGR3_USART1SW_PCLK			(0 << RCC_CFGR3_USART1SW_SHIFT)
-#define RCC_CFGR3_USART1SW_SYSCLK		(1 << RCC_CFGR3_USART1SW_SHIFT)
-#define RCC_CFGR3_USART1SW_LSE			(2 << RCC_CFGR3_USART1SW_SHIFT)
-#define RCC_CFGR3_USART1SW_HSI			(3 << RCC_CFGR3_USART1SW_SHIFT)
-
-/* --- RCC_CFGR3 values ---------------------------------------------------- */
 
 #define RCC_CR2_HSI48CAL_SHIFT			24
 #define RCC_CR2_HSI48CAL			(0xFF << RCC_CR2_HSI48CAL_SHIFT)
@@ -528,8 +532,8 @@ enum rcc_periph_rst {
 	RST_DAC1	= _REG_BIT(0x10, 29), /* Compatibility alias */
 	RST_CEC		= _REG_BIT(0x10, 30),
 
-	/* Advanced peripherals */
-	RST_BACKUPDOMAIN = _REG_BIT(0x20, 16),/* BDCR[16] */
+	/* Backup domain control */
+	RST_BDCR	= _REG_BIT(0x20, 16),/* BDCR[16] */
 
 	/* AHB peripherals */
 	RST_GPIOA	= _REG_BIT(0x28, 17),
@@ -579,6 +583,10 @@ enum rcc_osc rcc_usb_clock_source(void);
 void rcc_clock_setup_in_hse_8mhz_out_48mhz(void);
 void rcc_clock_setup_in_hsi_out_48mhz(void);
 void rcc_clock_setup_in_hsi48_out_48mhz(void);
+uint32_t rcc_get_usart_clk_freq(uint32_t usart);
+uint32_t rcc_get_timer_clk_freq(uint32_t timer);
+uint32_t rcc_get_i2c_clk_freq(uint32_t i2c);
+uint32_t rcc_get_spi_clk_freq(uint32_t spi);
 
 END_DECLS
 

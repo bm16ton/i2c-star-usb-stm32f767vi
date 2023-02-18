@@ -407,6 +407,7 @@ void i2c_peripheral_enable(uint32_t i2c);
 void i2c_peripheral_disable(uint32_t i2c);
 void i2c_send_start(uint32_t i2c);
 void i2c_send_stop(uint32_t i2c);
+bool i2c_stop_detected(uint32_t i2c);
 void i2c_clear_stop(uint32_t i2c);
 void i2c_set_own_7bit_slave_address(uint32_t i2c, uint8_t slave);
 void i2c_set_own_10bit_slave_address(uint32_t i2c, uint16_t slave);
@@ -434,6 +435,9 @@ bool i2c_is_start(uint32_t i2c);
 void i2c_enable_autoend(uint32_t i2c);
 void i2c_disable_autoend(uint32_t i2c);
 bool i2c_nack(uint32_t i2c);
+void i2c_disable_ack(uint32_t i2c);
+void i2c_enable_ack(uint32_t i2c);
+void i2c_clear_nack(uint32_t i2c);
 bool i2c_busy(uint32_t i2c);
 bool i2c_transmit_int_status(uint32_t i2c);
 bool i2c_transfer_complete(uint32_t i2c);
@@ -444,7 +448,7 @@ void i2c_enable_rxdma(uint32_t i2c);
 void i2c_disable_rxdma(uint32_t i2c);
 void i2c_enable_txdma(uint32_t i2c);
 void i2c_disable_txdma(uint32_t i2c);
-void i2c_transfer7(uint32_t i2c, uint8_t addr, uint8_t *w, size_t wn, uint8_t *r, size_t rn);
+void i2c_transfer7(uint32_t i2c, uint8_t addr, const uint8_t *w, size_t wn, uint8_t *r, size_t rn);
 void i2c_set_speed(uint32_t i2c, enum i2c_speeds speed, uint32_t clock_megahz);
 
 END_DECLS

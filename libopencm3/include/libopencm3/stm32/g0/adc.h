@@ -64,9 +64,6 @@
 
 /** ADC_CALFACT Calibration factor register */
 #define ADC_CALFACT(adc)	MMIO32((adc) + 0xB4)
-
-/** ADC_OR Option register */
-#define ADC_OR(adc)			MMIO32((adc) + 0xD0)
 /**@}*/
 
 /* --- Register values -------------------------------------------------------*/
@@ -95,8 +92,8 @@
 /** @defgroup adc_ccr_presc ADC clock prescaler
  *@{*/
 #define ADC_CCR_PRESC_NODIV		(0x0)
-#define ADC_CCR_PRESC_DIV1		(0x1)
-#define ADC_CCR_PRESC_DIV2		(0x2)
+#define ADC_CCR_PRESC_DIV2		(0x1)
+#define ADC_CCR_PRESC_DIV4		(0x2)
 #define ADC_CCR_PRESC_DIV6		(0x3)
 #define ADC_CCR_PRESC_DIV8		(0x4)
 #define ADC_CCR_PRESC_DIV10		(0x5)
@@ -104,8 +101,8 @@
 #define ADC_CCR_PRESC_DIV16		(0x7)
 #define ADC_CCR_PRESC_DIV32		(0x8)
 #define ADC_CCR_PRESC_DIV64		(0x9)
-#define ADC_CCR_PRESC_DIV128	(0x10)
-#define ADC_CCR_PRESC_DIV256	(0x11)
+#define ADC_CCR_PRESC_DIV128	(0xa)
+#define ADC_CCR_PRESC_DIV256	(0xb)
 /**@}*/
 
 /**@}*/
@@ -120,6 +117,25 @@
 
 /** @addtogroup adc_cfgr1
 @{*/
+
+/** ALIGN: Data alignment */
+#define ADC_CFGR1_ALIGN				(1 << 5)
+
+/* EXTSEL[2:0]: External trigger selection for regular group */
+#define ADC_CFGR1_EXTSEL_SHIFT			6
+#define ADC_CFGR1_EXTSEL			(0x7 << ADC_CFGR1_EXTSEL_SHIFT)
+#define ADC_CFGR1_EXTSEL_VAL(x)			((x) << ADC_CFGR1_EXTSEL_SHIFT)
+/** @defgroup adc_cfgr1_extsel ADC external trigger selection values
+ *@{*/
+#define ADC_CFGR1_EXTSEL_TIM1_TRGO2	0x0
+#define ADC_CFGR1_EXTSEL_TIM1_CC4	0x1
+#define ADC_CFGR1_EXTSEL_TIM2_TRGO	0x2
+#define ADC_CFGR1_EXTSEL_TIM3_TRGO	0x3
+#define ADC_CFGR1_EXTSEL_TIM15_TRGO	0x4
+#define ADC_CFGR1_EXTSEL_TIM6_TRGO	0x5
+#define ADC_CFGR1_EXTSEL_TIM4_TRGO	0x6
+#define ADC_CFGR1_EXTSEL_EXTI11		0x7
+/**@}*/
 
 /** CHSELRMOD: Mode Selection of the ADC_CHSELR register */
 #define ADC_CFGR1_CHSELRMOD			(1 << 21)
@@ -297,14 +313,14 @@
 
 /** @defgroup adc_api_smptime ADC Sampling Time
  *@{*/
-#define ADC_SMPTIME_001DOT5 		ADC_SMPR_SMPx_001DOT5CYC
-#define ADC_SMPTIME_003DOT5 		ADC_SMPR_SMPx_003DOT5CYC
-#define ADC_SMPTIME_007DOT5 		ADC_SMPR_SMPx_007DOT5CYC
-#define ADC_SMPTIME_012DOT5 		ADC_SMPR_SMPx_012DOT5CYC
-#define ADC_SMPTIME_019DOT5 		ADC_SMPR_SMPx_019DOT5CYC
-#define ADC_SMPTIME_039DOT5 		ADC_SMPR_SMPx_039DOT5CYC
-#define ADC_SMPTIME_079DOT5 		ADC_SMPR_SMPx_079DOT5CYC
-#define ADC_SMPTIME_160DOT5 		ADC_SMPR_SMPx_160DOT5CYC
+#define ADC_SMPTIME_001DOT5		ADC_SMPR_SMPx_001DOT5CYC
+#define ADC_SMPTIME_003DOT5		ADC_SMPR_SMPx_003DOT5CYC
+#define ADC_SMPTIME_007DOT5		ADC_SMPR_SMPx_007DOT5CYC
+#define ADC_SMPTIME_012DOT5		ADC_SMPR_SMPx_012DOT5CYC
+#define ADC_SMPTIME_019DOT5		ADC_SMPR_SMPx_019DOT5CYC
+#define ADC_SMPTIME_039DOT5		ADC_SMPR_SMPx_039DOT5CYC
+#define ADC_SMPTIME_079DOT5		ADC_SMPR_SMPx_079DOT5CYC
+#define ADC_SMPTIME_160DOT5		ADC_SMPR_SMPx_160DOT5CYC
 /**@}*/
 
 /* --- Function prototypes ------------------------------------------------- */

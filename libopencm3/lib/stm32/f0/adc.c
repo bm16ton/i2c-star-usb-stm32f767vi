@@ -78,7 +78,7 @@ void adc_disable_discontinuous_mode(uint32_t adc)
  *  next channel in the list is prepared to convert on next trigger edge.
  *
  *  @note This mode can be emulated by ADC_MODE_GROUPED with group size
- *  of 1. @par
+ *  of 1.
  *
  * @li @c ADC_MODE_SCAN:        T(0123)[EOSEQ] T(0123)[EOSEQ] T(0123)[EOSEQ]
  *
@@ -86,7 +86,7 @@ void adc_disable_discontinuous_mode(uint32_t adc)
  *  storing results sequentially.
  *
  *  @note The DMA must be configured properly for more than single channel to
- *  convert. @par
+ *  convert.
  *
  * @li @c ADC_MODE_SCAN_INFINITE: T(0123[EOSEQ]0123[EOSEQ]0123[EOSEQ]...)
  *
@@ -102,11 +102,9 @@ void adc_disable_discontinuous_mode(uint32_t adc)
  *  and on the next trigger it wraps to the beginning.
  *
  *  @note The DMA must be configured properly to operate on more than single
- *  channel conversion groups.@par
+ *  channel conversion groups.
  *
  * @warning not all families supports all modes of operation of ADC.
- *
- * @par
  *
  */
 
@@ -114,7 +112,6 @@ void adc_disable_discontinuous_mode(uint32_t adc)
 /** @brief ADC Set conversion operation mode
  *
  * @note on SEQUENTIAL mode, the trigger event is necessary to start conversion.
- * @par
  *
  * @param[in] adc Unsigned int32. ADC base address (@ref adc_reg_base)
  * @param[in] opmode ADC operation mode
@@ -158,18 +155,18 @@ void adc_set_operation_mode(uint32_t adc, enum adc_opmode opmode)
  * sets the polarity of the trigger event: rising or falling edge or both. Note
  * that if the trigger polarity is zero, triggering is disabled.
  *
- * @param[in] adc Unsigned int32. ADC base address (@ref adc_reg_base)
- * @param[in] trigger Unsigned int32. Trigger identifier
- * @ref adc_trigger_regular
- * @param[in] polarity Unsigned int32. Trigger polarity @ref
- * adc_trigger_polarity_regular
+ * @param[in] adc peripheral of choice (@ref adc_reg_base)
+ * @param[in] trigger external trigger @ref adc_cfgr1_extsel
+ * @param[in] polarity Trigger polarity @ref adc_cfgr1_exten
  */
-
 void adc_enable_external_trigger_regular(uint32_t adc, uint32_t trigger,
 				 uint32_t polarity)
 {
-	ADC_CFGR1(adc) = (ADC_CFGR1(adc) & ~ADC_CFGR1_EXTSEL) | trigger;
-	ADC_CFGR1(adc) = (ADC_CFGR1(adc) & ~ADC_CFGR1_EXTEN_MASK) | polarity;
+	uint32_t reg = ADC_CFGR1(adc);
+	reg &= ~(ADC_CFGR1_EXTSEL_MASK << ADC_CFGR1_EXTSEL_SHIFT);
+	reg &= ~(ADC_CFGR1_EXTEN_MASK);
+	reg |= polarity | (trigger << ADC_CFGR1_EXTSEL_SHIFT);
+	ADC_CFGR1(adc) = reg;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -516,7 +513,7 @@ void adc_disable_analog_watchdog(uint32_t adc)
 /** @brief ADC Set Analog Watchdog Upper Threshold
  *
  * @param[in] adc Unsigned int32. ADC base address (@ref adc_reg_base)
- * @param[in] threshold. Upper threshold value
+ * @param[in] threshold Upper threshold value
  */
 
 void adc_set_watchdog_high_threshold(uint32_t adc, uint16_t threshold)
@@ -528,7 +525,7 @@ void adc_set_watchdog_high_threshold(uint32_t adc, uint16_t threshold)
 /** @brief ADC Set Analog Watchdog Lower Threshold
  *
  * @param[in] adc Unsigned int32. ADC base address (@ref adc_reg_base)
- * @param[in] threshold. Lower threshold value
+ * @param[in] threshold Lower threshold value
  */
 
 void adc_set_watchdog_low_threshold(uint32_t adc, uint16_t threshold)

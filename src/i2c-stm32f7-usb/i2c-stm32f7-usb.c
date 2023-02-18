@@ -195,39 +195,28 @@ static int usb_i2c_io(struct usb_setup_data *req, uint8_t *buf, uint16_t *len)
 	uint8_t size = req->wLength;
 
 	i2c_ctx_t ctx;
-
+    i2caddr = address;
 	i2c_ctx_init(&ctx, I2C1);
 
 	/* We can ignore CMD_I2C_BEGIN, the hardware will work out which
 	 * type of start condition to generate.
 	 */
-	PT_CALL(&ctx.leaf, i2c_ctx_start(&ctx));
+	PT_CALL(&ctx.leaf, i2c_ctx_start(&ctx, address, size, is_read));
 	if (ctx.err)
 		goto err;
 
-	/* Send the address */
-	PT_CALL(&ctx.leaf,
-		i2c_ctx_sendaddr(&ctx, address, (is_read ? size : 0)));
-	if (ctx.err)
-		goto err;
+		PT_CALL(&ctx.leaf, is_read ? i2c_ctx_getdata(&ctx, buf, size)
+					    : i2c_ctx_senddata(&ctx, buf, size));
+    if (ctx.err) {
+        goto err;
+      }  
 
-	/* Perform the transaction */
-	for (int i=0; i<size; i++) {
-		PT_CALL(&ctx.leaf, is_read ? i2c_ctx_getdata(&ctx, buf + i)
-					    : i2c_ctx_senddata(&ctx, buf[i]));
-		if (ctx.err)
-			goto err;
-	}
-
-	/* Stop the transaction if requested and this is a write transaction
-	 * (reads are stopped automatically)
-	 */
 	if (cmd & CMD_I2C_END && !is_read) {
 		PT_CALL(&ctx.leaf, i2c_ctx_stop(&ctx));
 		if (ctx.err)
 			goto err;
 	}
-
+ 
 	status = STATUS_ADDRESS_ACK;
 	*len = (is_read ? size : 0);
 	return USBD_REQ_HANDLED;
@@ -237,6 +226,7 @@ err:
 	status = STATUS_ADDRESS_NACK;
 	*len = 0;
 	return USBD_REQ_HANDLED;
+
 }
 
 static enum usbd_request_return_codes usb_control_request(

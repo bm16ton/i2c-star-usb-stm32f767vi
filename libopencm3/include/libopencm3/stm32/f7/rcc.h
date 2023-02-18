@@ -137,29 +137,35 @@
 #define RCC_CFGR_RTCPRE_SHIFT			16
 #define RCC_CFGR_RTCPRE_MASK			0x1f
 
-/* PPRE1/2: APB high-speed prescalers */
 #define RCC_CFGR_PPRE2_SHIFT			13
 #define RCC_CFGR_PPRE2_MASK			0x7
 #define RCC_CFGR_PPRE1_SHIFT			10
 #define RCC_CFGR_PPRE1_MASK			0x7
-#define RCC_CFGR_PPRE_DIV_NONE			0x0
-#define RCC_CFGR_PPRE_DIV_2			0x4
-#define RCC_CFGR_PPRE_DIV_4			0x5
-#define RCC_CFGR_PPRE_DIV_8			0x6
-#define RCC_CFGR_PPRE_DIV_16			0x7
+/** @defgroup rcc_cfgr_apbxpre RCC_CFGR APBx prescale factors
+ * These can be used for both APB1 and APB2 prescaling
+ * @{
+ */
+#define RCC_CFGR_PPRE_NODIV			0x0
+#define RCC_CFGR_PPRE_DIV2			0x4
+#define RCC_CFGR_PPRE_DIV4			0x5
+#define RCC_CFGR_PPRE_DIV8			0x6
+#define RCC_CFGR_PPRE_DIV16			0x7
+/**@}*/
 
-/* HPRE: AHB high-speed prescaler */
 #define RCC_CFGR_HPRE_SHIFT			4
 #define RCC_CFGR_HPRE_MASK			0xf
-#define RCC_CFGR_HPRE_DIV_NONE			0x0
-#define RCC_CFGR_HPRE_DIV_2			(0x8 + 0)
-#define RCC_CFGR_HPRE_DIV_4			(0x8 + 1)
-#define RCC_CFGR_HPRE_DIV_8			(0x8 + 2)
-#define RCC_CFGR_HPRE_DIV_16			(0x8 + 3)
-#define RCC_CFGR_HPRE_DIV_64			(0x8 + 4)
-#define RCC_CFGR_HPRE_DIV_128			(0x8 + 5)
-#define RCC_CFGR_HPRE_DIV_256			(0x8 + 6)
-#define RCC_CFGR_HPRE_DIV_512			(0x8 + 7)
+/** @defgroup rcc_cfgr_ahbpre RCC_CFGR AHB prescale factors
+@{*/
+#define RCC_CFGR_HPRE_NODIV			0x0
+#define RCC_CFGR_HPRE_DIV2			(0x8 + 0)
+#define RCC_CFGR_HPRE_DIV4			(0x8 + 1)
+#define RCC_CFGR_HPRE_DIV8			(0x8 + 2)
+#define RCC_CFGR_HPRE_DIV16			(0x8 + 3)
+#define RCC_CFGR_HPRE_DIV64			(0x8 + 4)
+#define RCC_CFGR_HPRE_DIV128			(0x8 + 5)
+#define RCC_CFGR_HPRE_DIV256			(0x8 + 6)
+#define RCC_CFGR_HPRE_DIV512			(0x8 + 7)
+/**@}*/
 
 /* SWS: System clock switch status */
 #define RCC_CFGR_SWS_SHIFT			2
@@ -174,6 +180,28 @@
 #define RCC_CFGR_SW_HSI				0x0
 #define RCC_CFGR_SW_HSE				0x1
 #define RCC_CFGR_SW_PLL				0x2
+
+/** Older compatible definitions to ease migration
+ * @defgroup rcc_cfgr_deprecated RCC_CFGR Deprecated dividers
+ * @deprecated Use _CFGR_xPRE_DIVn form instead, across all families
+ * @{
+ */
+#define RCC_CFGR_PPRE_DIV_NONE			0x0
+#define RCC_CFGR_PPRE_DIV_2			0x4
+#define RCC_CFGR_PPRE_DIV_4			0x5
+#define RCC_CFGR_PPRE_DIV_8			0x6
+#define RCC_CFGR_PPRE_DIV_16			0x7
+
+#define RCC_CFGR_HPRE_DIV_NONE			0x0
+#define RCC_CFGR_HPRE_DIV_2			(0x8 + 0)
+#define RCC_CFGR_HPRE_DIV_4			(0x8 + 1)
+#define RCC_CFGR_HPRE_DIV_8			(0x8 + 2)
+#define RCC_CFGR_HPRE_DIV_16			(0x8 + 3)
+#define RCC_CFGR_HPRE_DIV_64			(0x8 + 4)
+#define RCC_CFGR_HPRE_DIV_128			(0x8 + 5)
+#define RCC_CFGR_HPRE_DIV_256			(0x8 + 6)
+#define RCC_CFGR_HPRE_DIV_512			(0x8 + 7)
+/**@}*/
 
 /* --- RCC_CIR values ------------------------------------------------------ */
 
@@ -594,30 +622,37 @@
 #define RCC_DCKCFGR2_CECSEL			(1<<26)
 #define RCC_DCKCFGR2_LPTIM1SEL_MASK		0x3
 #define RCC_DCKCFGR2_LPTIM1SEL_SHIFT		24
-#define RCC_DCKCFGR2_I2C4SEL_MASK		0x3
+#define RCC_DCKCFGR2_I2CxSEL_MASK		0x3
 #define RCC_DCKCFGR2_I2C4SEL_SHIFT		22
-#define RCC_DCKCFGR2_I2C3SEL_MASK		0x3
 #define RCC_DCKCFGR2_I2C3SEL_SHIFT		20
-#define RCC_DCKCFGR2_I2C2SEL_MASK		0x3
 #define RCC_DCKCFGR2_I2C2SEL_SHIFT		18
-#define RCC_DCKCFGR2_I2C1SEL_MASK		0x3
 #define RCC_DCKCFGR2_I2C1SEL_SHIFT		16
-#define RCC_DCKCFGR2_UART8SEL_MASK		0x3
+
+#define RCC_DCKCFGR2_UARTxSEL_MASK		0x3
+/** @defgroup rcc_dckcfgr2_uart_choices UART for clock source selecting
+ * @note This is only used internally.
+ * @{
+ */
 #define RCC_DCKCFGR2_UART8SEL_SHIFT		14
-#define RCC_DCKCFGR2_UART7SEL_MASK		0x3
 #define RCC_DCKCFGR2_UART7SEL_SHIFT		12
-#define RCC_DCKCFGR2_USART6SEL_MASK		0x3
 #define RCC_DCKCFGR2_USART6SEL_SHIFT		10
-#define RCC_DCKCFGR2_UART5SEL_MASK		0x3
 #define RCC_DCKCFGR2_UART5SEL_SHIFT		8
-#define RCC_DCKCFGR2_UART4SEL_MASK		0x3
 #define RCC_DCKCFGR2_UART4SEL_SHIFT		6
-#define RCC_DCKCFGR2_UART3SEL_MASK		0x3
 #define RCC_DCKCFGR2_UART3SEL_SHIFT		4
-#define RCC_DCKCFGR2_UART2SEL_MASK		0x3
 #define RCC_DCKCFGR2_UART2SEL_SHIFT		2
-#define RCC_DCKCFGR2_UART1SEL_MASK		0x3
 #define RCC_DCKCFGR2_UART1SEL_SHIFT		0
+/**@}*/
+
+/** @defgroup rcc_dckcfgr2_uart_clksel UART Clock source selections
+ * @{
+ */
+#define RCC_DCKCFGR2_UARTxSEL_PCLK			0x0
+#define RCC_DCKCFGR2_UARTxSEL_SYSCLK			0x1
+#define RCC_DCKCFGR2_UARTxSEL_HSI			0x2
+#define RCC_DCKCFGR2_UARTxSEL_LSE			0x3
+/**@}*/
+
+
 
 extern uint32_t rcc_ahb_frequency;
 extern uint32_t rcc_apb1_frequency;
@@ -958,6 +993,11 @@ void rcc_set_main_pll_hse(uint32_t pllm, uint32_t plln, uint32_t pllp,
 uint32_t rcc_system_clock_source(void);
 void rcc_clock_setup_hse(const struct rcc_clock_scale *clock, uint32_t hse_mhz);
 void rcc_clock_setup_hsi(const struct rcc_clock_scale *clock);
+uint32_t rcc_get_usart_clk_freq(uint32_t usart);
+uint32_t rcc_get_timer_clk_freq(uint32_t timer);
+uint32_t rcc_get_i2c_clk_freq(uint32_t i2c);
+uint32_t rcc_get_spi_clk_freq(uint32_t spi);
+
 END_DECLS
 
 /**@}*/

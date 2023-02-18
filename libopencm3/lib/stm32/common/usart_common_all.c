@@ -52,17 +52,7 @@ usart_reg_base
 
 void usart_set_baudrate(uint32_t usart, uint32_t baud)
 {
-	uint32_t clock = rcc_apb1_frequency;
-
-#if defined USART1
-	if ((usart == USART1)
-#if defined USART6
-		|| (usart == USART6)
-#endif
-		) {
-		clock = rcc_apb2_frequency;
-	}
-#endif
+	uint32_t clock = rcc_get_usart_clk_freq(usart);
 
 	/*
 	 * Yes it is as simple as that. The reference manual is
@@ -348,6 +338,55 @@ usart_reg_base
 void usart_disable_tx_interrupt(uint32_t usart)
 {
 	USART_CR1(usart) &= ~USART_CR1_TXEIE;
+}
+
+/*---------------------------------------------------------------------------*/
+/**
+ * @brief USART Transmission Complete Interrupt Enable
+ * 
+ * @param[in] usart unsigned 32 bit. USART block register address base @ref
+usart_reg_base
+ */
+
+void usart_enable_tx_complete_interrupt(uint32_t usart)
+{
+	USART_CR1(usart) |= USART_CR1_TCIE;
+}
+
+/*---------------------------------------------------------------------------*/
+/**
+ * @brief USART Transmission Complete Interrupt Disable
+ * 
+ * @param[in] usart unsigned 32 bit. USART block register address base @ref
+usart_reg_base
+ */
+
+void usart_disable_tx_complete_interrupt(uint32_t usart)
+{
+	USART_CR1(usart) &= ~USART_CR1_TCIE;
+}
+
+/** @brief USART Idle Interrupt Enable.
+
+@param[in] usart unsigned 32 bit. USART block register address base @ref
+usart_reg_base
+*/
+
+void usart_enable_idle_interrupt(uint32_t usart)
+{
+	USART_CR1(usart) |= USART_CR1_IDLEIE;
+}
+
+/*---------------------------------------------------------------------------*/
+/** @brief USART Idle Interrupt Disable.
+
+@param[in] usart unsigned 32 bit. USART block register address base @ref
+usart_reg_base
+*/
+
+void usart_disable_idle_interrupt(uint32_t usart)
+{
+	USART_CR1(usart) &= ~USART_CR1_IDLEIE;
 }
 
 /*---------------------------------------------------------------------------*/

@@ -1,0 +1,11 @@
+--- lib/usb/usb_control.c
++++ lib/usb/usb_control.c
+@@ -224,8 +222,6 @@ void _usbd_control_setup(usbd_device *usbd_dev, uint8_t ea)
+ 
+ 	usbd_dev->control_state.complete = NULL;
+ 
+-	usbd_ep_nak_set(usbd_dev, 0, 1);
+-
+ 	if (usbd_ep_read_packet(usbd_dev, 0, req, 8) != 8) {
+ 		stall_transaction(usbd_dev);
+ 		return;

@@ -296,9 +296,37 @@ void i2c_disable_autoend(uint32_t i2c)
 	I2C_CR2(i2c) &= ~I2C_CR2_AUTOEND;
 }
 
+void i2c_enable_ack(uint32_t i2c)
+{
+	I2C_OAR1(i2c) |= I2C_OAR1_OA1EN_ENABLE;
+}
+
+/*---------------------------------------------------------------------------*/
+/** @brief I2C Disable ACK
+
+Disables acking of own 7/10 bit address
+@param[in] i2c Unsigned int32. I2C register base address @ref i2c_reg_base.
+*/
+void i2c_disable_ack(uint32_t i2c)
+{
+	I2C_OAR1(i2c) &= ~I2C_OAR1_OA1EN_ENABLE;
+}
+
+
+
 bool i2c_nack(uint32_t i2c)
 {
 	return (I2C_ISR(i2c) & I2C_ISR_NACKF);
+}
+
+void i2c_clear_nack(uint32_t i2c)
+{
+	I2C_ICR(i2c) |= I2C_ICR_NACKCF;
+}
+
+bool i2c_stop_detected(uint32_t i2c)
+{
+	return (I2C_ISR(i2c) & I2C_ISR_STOPF);
 }
 
 bool i2c_busy(uint32_t i2c)
@@ -395,7 +423,7 @@ void i2c_disable_txdma(uint32_t i2c)
  * @param r destination buffer to read into
  * @param rn number of bytes to read (r should be at least this long)
  */
-void i2c_transfer7(uint32_t i2c, uint8_t addr, uint8_t *w, size_t wn, uint8_t *r, size_t rn)
+void i2c_transfer7(uint32_t i2c, uint8_t addr, const uint8_t *w, size_t wn, uint8_t *r, size_t rn)
 {
 	/*  waiting for busy is unnecessary. read the RM */
 	if (wn) {
@@ -415,7 +443,16 @@ void i2c_transfer7(uint32_t i2c, uint8_t addr, uint8_t *w, size_t wn, uint8_t *r
 				if (i2c_transmit_int_status(i2c)) {
 					wait = false;
 				}
-				while (i2c_nack(i2c)); /* FIXME Some error */
+				if (i2c_stop_detected(i2c)) {
+					/* Clear potential stop detection */
+					i2c_clear_stop(i2c);
+				}
+				if (i2c_nack(i2c)) {
+					/* Stop transaction on nack */
+					i2c_clear_nack(i2c);
+					i2c_send_stop(i2c);
+					return;
+				}
 			}
 			i2c_send_data(i2c, *w++);
 		}

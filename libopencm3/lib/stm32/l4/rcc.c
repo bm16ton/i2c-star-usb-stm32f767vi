@@ -36,12 +36,35 @@
  */
 
 /**@{*/
+#include <libopencm3/cm3/assert.h>
 #include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/flash.h>
+#include <libopencm3/stm32/pwr.h>
 
 /* Set the default clock frequencies after reset. */
 uint32_t rcc_ahb_frequency = 4000000;
 uint32_t rcc_apb1_frequency = 4000000;
 uint32_t rcc_apb2_frequency = 4000000;
+
+const struct rcc_clock_scale rcc_hsi16_configs[RCC_CLOCK_CONFIG_END] = {
+	{ /* 80MHz PLL from HSI16 VR1 */
+		.pllm = 4,
+		.plln = 40,
+		.pllp = RCC_PLLCFGR_PLLP_DIV7,
+		.pllq = RCC_PLLCFGR_PLLQ_DIV6,
+		.pllr = RCC_PLLCFGR_PLLR_DIV2,
+		.pll_source = RCC_PLLCFGR_PLLSRC_HSI16,
+		.hpre = RCC_CFGR_HPRE_NODIV,
+		.ppre1 = RCC_CFGR_PPRE_NODIV,
+		.ppre2 = RCC_CFGR_PPRE_NODIV,
+		.voltage_scale = PWR_SCALE1,
+		.flash_config = FLASH_ACR_DCEN | FLASH_ACR_ICEN |
+		FLASH_ACR_LATENCY_4WS,
+		.ahb_frequency  = 80000000,
+		.apb1_frequency = 80000000,
+		.apb2_frequency = 80000000,
+	},
+};
 
 void rcc_osc_ready_int_clear(enum rcc_osc osc)
 {
@@ -341,6 +364,82 @@ uint32_t rcc_system_clock_source(void)
 }
 
 /**
+ * Setup clocks to run from PLL.
+ *
+ * The arguments provide the pll source, multipliers, dividers, all that's
+ * needed to establish a system clock.
+ *
+ * @param clock clock information structure.
+ */
+void rcc_clock_setup_pll(const struct rcc_clock_scale *clock)
+{
+	/* Enable internal high-speed oscillator (HSI16). */
+	rcc_osc_on(RCC_HSI16);
+	rcc_wait_for_osc_ready(RCC_HSI16);
+
+	/* Select HSI16 as SYSCLK source. */
+	rcc_set_sysclk_source(RCC_PLLCFGR_PLLSRC_HSI16);
+
+	/* Enable external high-speed oscillator (HSE). */
+	if (clock->pll_source == RCC_PLLCFGR_PLLSRC_HSE) {
+		rcc_osc_on(RCC_HSE);
+		rcc_wait_for_osc_ready(RCC_HSE);
+	}
+
+	/* Set the VOS scale mode */
+	rcc_periph_clock_enable(RCC_PWR);
+	pwr_set_vos_scale(clock->voltage_scale);
+
+	/*
+	* Set prescalers for AHB, ADC, APB1, APB2.
+	* Do this before touching the PLL (TODO: why?).
+	*/
+	rcc_set_hpre(clock->hpre);
+	rcc_set_ppre1(clock->ppre1);
+	rcc_set_ppre2(clock->ppre2);
+
+	/* Disable PLL oscillator before changing its configuration. */
+	rcc_osc_off(RCC_PLL);
+
+	/* Configure the PLL oscillator. */
+	rcc_set_main_pll(clock->pll_source, clock->pllm, clock->plln,
+			clock->pllp, clock->pllq,  clock->pllr);
+
+	/* Enable PLL oscillator and wait for it to stabilize. */
+	rcc_osc_on(RCC_PLL);
+	rcc_wait_for_osc_ready(RCC_PLL);
+
+	/* Configure flash settings. */
+	if (clock->flash_config & FLASH_ACR_DCEN) {
+		flash_dcache_enable();
+	} else {
+		flash_dcache_disable();
+	}
+	if (clock->flash_config & FLASH_ACR_ICEN) {
+		flash_icache_enable();
+	} else {
+		flash_icache_disable();
+	}
+	flash_set_ws(clock->flash_config);
+
+	/* Select PLL as SYSCLK source. */
+	rcc_set_sysclk_source(RCC_CFGR_SW_PLL);
+
+	/* Wait for PLL clock to be selected. */
+	rcc_wait_for_sysclk_status(RCC_PLL);
+
+	/* Set the peripheral clock frequencies used. */
+	rcc_ahb_frequency  = clock->ahb_frequency;
+	rcc_apb1_frequency = clock->apb1_frequency;
+	rcc_apb2_frequency = clock->apb2_frequency;
+
+	/* Disable internal high-speed oscillator. */
+	if (clock->pll_source == RCC_PLLCFGR_PLLSRC_HSE) {
+		rcc_osc_off(RCC_HSI16);
+	}
+}
+
+/**
  * Set the msi run time range.
  * Can only be called when MSI is either OFF, or when MSI is on _and_
  * ready. (RCC_CR_MSIRDY bit).  @sa rcc_set_msi_range_standby
@@ -434,4 +533,104 @@ void rcc_set_rtc_clock_source(enum rcc_osc clk)
 	}
 }
 
+/* Helper to calculate the frequency of a UART/I2C based on the apb and clksel value.
+ * For I2C, clock selection 0b11 is reserved while it specifies LSE for UARTs. */
+static uint32_t rcc_uart_i2c_clksel_freq_hz(uint32_t apb_clk, uint8_t shift, uint32_t clock_reg) {
+	uint8_t clksel = (clock_reg >> shift) & RCC_CCIPR_USARTxSEL_MASK;
+	uint8_t hpre = (RCC_CFGR >> RCC_CFGR_HPRE_SHIFT) & RCC_CFGR_HPRE_MASK;
+	switch (clksel) {
+		case RCC_CCIPR_USARTxSEL_APB:
+			return apb_clk;
+		case RCC_CCIPR_USARTxSEL_SYSCLK:
+			return rcc_ahb_frequency * rcc_get_div_from_hpre(hpre);
+		case RCC_CCIPR_USARTxSEL_HSI16:
+			return 16000000U;
+		case RCC_CCIPR_USARTxSEL_LSE:
+			return 32768U;
+	}
+	cm3_assert_not_reached();
+}
+
+/*---------------------------------------------------------------------------*/
+/** @brief Get the peripheral clock speed for the USART at base specified.
+ * @param usart  Base address of USART to get clock frequency for.
+ */
+uint32_t rcc_get_usart_clk_freq(uint32_t usart)
+{
+	/* Handle values with selectable clocks. */
+	if (usart == LPUART1_BASE) {
+		return rcc_uart_i2c_clksel_freq_hz(rcc_apb1_frequency, RCC_CCIPR_LPUART1SEL_SHIFT, RCC_CCIPR);
+	} else if (usart == USART1_BASE) {
+		return rcc_uart_i2c_clksel_freq_hz(rcc_apb2_frequency, RCC_CCIPR_USART1SEL_SHIFT, RCC_CCIPR);
+	} else if (usart == USART2_BASE) {
+		return rcc_uart_i2c_clksel_freq_hz(rcc_apb1_frequency, RCC_CCIPR_USART2SEL_SHIFT, RCC_CCIPR);
+	} else if (usart == USART3_BASE) {
+		return rcc_uart_i2c_clksel_freq_hz(rcc_apb1_frequency, RCC_CCIPR_USART3SEL_SHIFT, RCC_CCIPR);
+	} else if (usart == UART4_BASE) {
+		return rcc_uart_i2c_clksel_freq_hz(rcc_apb1_frequency, RCC_CCIPR_UART4SEL_SHIFT, RCC_CCIPR);
+	} else {  /* USART5 */
+		return rcc_uart_i2c_clksel_freq_hz(rcc_apb1_frequency, RCC_CCIPR_UART5SEL_SHIFT, RCC_CCIPR);
+	}
+}
+
+/*---------------------------------------------------------------------------*/
+/** @brief Get the peripheral clock speed for the Timer at base specified.
+ * @param timer  Base address of TIM to get clock frequency for.
+ */
+uint32_t rcc_get_timer_clk_freq(uint32_t timer)
+{
+	/* Handle APB1 timers, and apply multiplier if necessary. */
+	if (timer == LPTIM1_BASE || timer == LPTIM2_BASE) {
+		int shift = (timer == LPTIM1_BASE) ? RCC_CCIPR_LPTIM1SEL_SHIFT : RCC_CCIPR_LPTIM2SEL_SHIFT;
+		uint8_t clksel = (RCC_CCIPR >> shift) & RCC_CCIPR_LPTIMxSEL_MASK;
+		switch (clksel) {
+			case RCC_CCIPR_LPTIMxSEL_APB:
+				return rcc_apb1_frequency;
+			case RCC_CCIPR_LPTIMxSEL_LSI:
+				return 32000U;
+			case RCC_CCIPR_LPTIMxSEL_HSI16:
+				return 16000000U;
+			case RCC_CCIPR_LPTIMxSEL_LSE:
+				return 32768U;
+		}
+	} else if (timer >= TIM2_BASE && timer <= TIM7_BASE) {
+		uint8_t ppre1 = (RCC_CFGR >> RCC_CFGR_PPRE1_SHIFT) & RCC_CFGR_PPRE1_MASK;
+		return (ppre1 == RCC_CFGR_PPRE_NODIV) ? rcc_apb1_frequency
+			: 2 * rcc_apb1_frequency;
+	} else {
+		uint8_t ppre2 = (RCC_CFGR >> RCC_CFGR_PPRE2_SHIFT) & RCC_CFGR_PPRE2_MASK;
+		return (ppre2 == RCC_CFGR_PPRE_NODIV) ? rcc_apb2_frequency
+			: 2 * rcc_apb2_frequency;
+	}
+	cm3_assert_not_reached();
+}
+
+/*---------------------------------------------------------------------------*/
+/** @brief Get the peripheral clock speed for the I2C device at base specified.
+ * @param i2c  Base address of I2C to get clock frequency for.
+ */
+uint32_t rcc_get_i2c_clk_freq(uint32_t i2c)
+{
+	if (i2c == I2C1_BASE) {
+		return rcc_uart_i2c_clksel_freq_hz(rcc_apb1_frequency, RCC_CCIPR_I2C1SEL_SHIFT, RCC_CCIPR);
+	} else if (i2c == I2C2_BASE) {
+		return rcc_uart_i2c_clksel_freq_hz(rcc_apb1_frequency, RCC_CCIPR_I2C2SEL_SHIFT, RCC_CCIPR);
+	} else if (i2c == I2C3_BASE) {
+		return rcc_uart_i2c_clksel_freq_hz(rcc_apb1_frequency, RCC_CCIPR_I2C3SEL_SHIFT, RCC_CCIPR);
+	} else {  /* I2C4 */
+		return rcc_uart_i2c_clksel_freq_hz(rcc_apb1_frequency, RCC_CCIPR_I2C4SEL_SHIFT, RCC_CCIPR2);
+	}
+}
+
+/*---------------------------------------------------------------------------*/
+/** @brief Get the peripheral clock speed for the SPI device at base specified.
+ * @param spi  Base address of SPI device to get clock frequency for (e.g. SPI1_BASE).
+ */
+uint32_t rcc_get_spi_clk_freq(uint32_t spi) {
+	if (spi == SPI1_BASE) {
+		return rcc_apb2_frequency;
+	} else {
+		return rcc_apb1_frequency;
+	}
+}
 /**@}*/
